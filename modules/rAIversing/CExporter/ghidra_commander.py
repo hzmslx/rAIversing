@@ -118,20 +118,7 @@ class HeadlessAnalyzerWrapper:
         self.__loader__ = f' -loader {loader}'
         return self
 
-    def __prepare_directory__(self):
-        if self.__folder_path__ != "":
-            path = os.path.join(self.__project_name__, self.__folder_path__)
-        else:
-            path = self.__project_name__
 
-        dir = os.path.join(self.__project_location__,path.strip(),"")
-        bool = os.path.exists(dir.strip())
-        print(bool)
-        if bool:
-            print(f"Directory already exists:{dir}")
-        else:
-            print(f"Creating directory: {dir}")
-            os.makedirs(dir)
     def __build__(self):
         if self.__folder_path__ != "":
             path = os.path.join(self.__project_name__, self.__folder_path__)
@@ -154,7 +141,7 @@ class HeadlessAnalyzerWrapper:
                            f"{self.__analysisTimeoutPerFile__}" \
                            f"{self.__max_cpu__}" \
                            f"{self.__loader__}"
-        self.__prepare_directory__()
+
 
         return self
 

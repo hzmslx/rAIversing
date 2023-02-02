@@ -11,8 +11,9 @@ def main():
         .postScript(f'ExtractCcode.py') \
         .scriptPath(f'{GHIDRA_SCRIPTS}') \
         .log(f'{PROJECTS_ROOT}/log') \
+        .deleteProject()\
         .scriptlog(f'{PROJECTS_ROOT}/scriptlog') \
-        .print()
+        .run()
 
 
 if __name__ == "__main__":
