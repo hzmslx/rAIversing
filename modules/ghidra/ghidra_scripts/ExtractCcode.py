@@ -36,13 +36,13 @@ def main():
     cCode = ""
 
     for func in funcs: # type: ghidra.program.model.listing.Function
-        if not len(func.getVariables(VF.UniqueVariableFilter())):
+        if len(func.getCalledFunctions(getMonitor())) > 0 or func.hasNoReturn():
             continue
             pass
 
         cCode+="\n////>>"+func.getEntryPoint().toString("0x")+">>"+func.getName()+">>////\n"
-        for var in func.getVariables(VF.UniqueVariableFilter()):
-            cCode += var.getName()+"\n"
+        for callee in func.getCalledFunctions(getMonitor()):
+            cCode += callee.getName()+"\n"
         cCode+=fdapi.decompile(func)
 
     with open(os.path.join(PROJECTS_ROOT,str(fpapi.getCurrentProgram()).split(" ")[0]+".c"), "w") as f:

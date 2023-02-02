@@ -22,6 +22,7 @@ def run20819():
         .project_name('20819_firmware') \
         .postScript(f'ExtractCcode.py') \
         .scriptPath(f'{GHIDRA_SCRIPTS}') \
+        .deleteProject() \
         .log(f'{PROJECTS_ROOT}/log') \
         .processor("ARM:LE:32:Cortex") \
         .scriptlog(f'{PROJECTS_ROOT}/scriptlog') \
