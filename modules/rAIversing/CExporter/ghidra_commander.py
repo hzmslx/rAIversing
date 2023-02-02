@@ -118,6 +118,9 @@ class HeadlessAnalyzerWrapper:
         self.__loader__ = f' -loader {loader}'
         return self
 
+    def __prepare_project_location__(self):
+        if not os.path.exists(os.path.join(self.__project_location__,self.__project_name__.strip())):
+            os.mkdir(os.path.join(self.__project_location__,self.__project_name__.strip()))
 
     def __build__(self):
         if self.__folder_path__ != "":
@@ -125,7 +128,7 @@ class HeadlessAnalyzerWrapper:
         else:
             path = self.__project_name__
         self.__command__ = f"{self.__analyzeHeadlessBinary__}" \
-                           f"{self.__project_location__}{path}" \
+                           f"{os.path.join(self.__project_location__,self.__project_name__.strip())}{path}" \
                            f"{self.__import_file__}" \
                            f"{self.__preScript__}" \
                            f"{self.__postScript__}" \
@@ -151,4 +154,5 @@ class HeadlessAnalyzerWrapper:
 
     def run(self):
         self.__build__()
+        self.__prepare_project_location__()
         os.system(self.__command__)

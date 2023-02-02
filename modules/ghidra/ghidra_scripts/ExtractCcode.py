@@ -1,4 +1,4 @@
-# Dumps all decompiled code to a file
+#  Dumps all decompiled code to a file
 # @author MrMatch246
 # @category tooling
 # @keybinding
@@ -8,13 +8,19 @@
 import sys, os
 from ghidra.app.decompiler.flatapi import FlatDecompilerAPI
 from ghidra.program.flatapi import FlatProgramAPI
-import ghidra.program.model.listing.VariableFilter.MemoryVariableFilter as MVF
-import ghidra.program.model.listing.VariableFilter.RegisterVariableFilter as RVF
+import ghidra.program.model.listing.VariableFilter as VF
+from ghidra.program.model.listing.VariableFilter import MemoryVariableFilter
+import ghidra.program.model.listing.Function
+
 from pathing import *
+
+try:
+    from ghidra.ghidra_builtins import *
+except:
+    pass
 
 fpapi = FlatProgramAPI(getState().getCurrentProgram())
 fdapi = FlatDecompilerAPI(fpapi)
-
 
 def main():
     state = getState()
@@ -25,20 +31,25 @@ def main():
     projectData = activeProject.getProjectData()
     rootFolder = projectData.getRootFolder()
     fm = currentProgram.getFunctionManager()
-    funcs = fm.getFunctions(True) # True means 'forward'
+    funcs =list(fm.getFunctions(True)) # True means 'forward'
 
     cCode = ""
-    for func in funcs:
+
+    for func in funcs: # type: ghidra.program.model.listing.Function
+        if not len(func.getVariables(VF.UniqueVariableFilter())):
+            continue
+            pass
+
         cCode+="\n////>>"+func.getEntryPoint().toString("0x")+">>"+func.getName()+">>////\n"
-        for called_funct in func.getCalledFunctions(getMonitor()):
-            cCode+="\n//Calling//>>"+called_funct.getEntryPoint().toString("0x")+">>"+called_funct.getName()+">>////\n"
-        for calling_funct in func.getCallingFunctions(getMonitor()):
-            cCode+="\n//Called by//>>"+calling_funct.getEntryPoint().toString("0x")+">>"+calling_funct.getName()+">>////\n"
+        for var in func.getVariables(VF.UniqueVariableFilter()):
+            cCode += var.getName()+"\n"
         cCode+=fdapi.decompile(func)
 
     with open(os.path.join(PROJECTS_ROOT,str(fpapi.getCurrentProgram()).split(" ")[0]+".c"), "w") as f:
         f.write(cCode)
         f.close()
+
+
 
 
 
