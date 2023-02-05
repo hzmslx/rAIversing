@@ -1,3 +1,12 @@
 first make the following code more readable without renaming functions, variables that are defined outside
-of this function or Pointers starting with PTR, and second list all renaming operations in dictionary format with keys
+of this function or Pointers starting with PTR, and second list all renaming operations in json format with keys
 being the old names and the values the corresponding new names. do not list the original code:
+
+######################
+
+format your response as json file
+
+first make the following code more readable without renaming variables starting with PTR, DAT or FUN and second list all renaming operations in json format with keys
+being the old names and the values the corresponding new names. display only the improved code as entry of a json file
+
+#######################

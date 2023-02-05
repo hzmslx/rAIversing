@@ -1,4 +1,4 @@
-import os,sys
+import os, sys
 from rAIversing.pathing import *
 from rAIversing.CExporter.ghidra_commander import HeadlessAnalyzerWrapper
 
@@ -11,9 +11,10 @@ def CExporting():
         .postScript(f'ExtractCcode.py') \
         .scriptPath(f'{GHIDRA_SCRIPTS}') \
         .log(f'{PROJECTS_ROOT}/log') \
-        .deleteProject()\
+        .deleteProject() \
         .scriptlog(f'{PROJECTS_ROOT}/scriptlog') \
         .run()
+
 
 def run20819():
     ah = HeadlessAnalyzerWrapper()
@@ -27,7 +28,6 @@ def run20819():
         .processor("ARM:LE:32:Cortex") \
         .scriptlog(f'{PROJECTS_ROOT}/scriptlog') \
         .run()
-
 
 
 if __name__ == "__main__":
