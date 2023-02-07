@@ -40,7 +40,11 @@ class ChatGPTModule(AiModuleInterface):
         return string
 
     def remove_trailing_commas(self, string):
-        return string.replace(',\n}', '\n}')
+        string = string.replace(',\n}', '\n}')
+        string = string.replace(',\n }', '\n }')
+        string = string.replace(',\n  }', '\n  }')
+        string = string.replace(',\n   }', '\n   }')
+        return string
 
     def any_dict_to_renaming_dict(self, any_dict):
         pass
@@ -134,10 +138,3 @@ class ChatGPTModule(AiModuleInterface):
         return response_dict, response_string
 
 
-def ChatGPTTest():
-    chat = ChatGPTModule()
-    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "tests", "test_code.c")) as f:
-        test_code = f.read()
-    improved_code, renaming_dict = chat.prompt_with_renaming(test_code)
-    print(improved_code)
-    print(renaming_dict)

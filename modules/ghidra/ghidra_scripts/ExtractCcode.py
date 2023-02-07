@@ -65,6 +65,7 @@ def main():
         function_metadata[func.getName()]["code"] = fdapi.decompile(func)
         function_metadata[func.getName()]["entrypoint"] = func.getEntryPoint().toString("0x")
         function_metadata[func.getName()]["improved"] = False
+        function_metadata[func.getName()]["renaming"] = {}
         function_code = fdapi.decompile(func)
 
         for calling in func.getCallingFunctions(getMonitor()):

@@ -96,10 +96,11 @@ class rAIverseEngine():
 
     def run_recursive_rev(self):
         function_layer = 0
+        overall_processed_functions = 0
         while not self.check_all_improved():
             self.logger.info(f"Getting layer {function_layer}")
             lfl = self.get_lowest_function_layer(self.functions)
-            self.logger.info(f"Starting layer {function_layer} with {len(lfl)} functions")
+            self.logger.info(f"Starting layer {function_layer} with {len(lfl)} of {len(self.functions)} functions. Overall processed functions: {overall_processed_functions}/{len(self.functions)}")
             function_layer += 1
             processed_functions = 0
             for name in lfl:
@@ -109,6 +110,7 @@ class rAIverseEngine():
                     improved_code = self.undo_PTR_DAT_renaming(renaming_dict,improved_code)
                     self.functions[name]["code"] = improved_code
                     self.functions[name]["improved"] = True
+                    self.functions[name]["renaming"] = renaming_dict
                     self.rename_for_all_functions(renaming_dict)
                 except Exception as e:
                     self.logger.error(f"Error in function {name}: {e}")
@@ -116,6 +118,7 @@ class rAIverseEngine():
                 if processed_functions % 10 == 0:
                     self.save_functions()
                     self.logger.info(f"Saved functions after {processed_functions}/{len(lfl)} functions")
+            overall_processed_functions += processed_functions
     def testbench(self):
         self.ai_module.testbench()
 
