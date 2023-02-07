@@ -15,6 +15,8 @@ class rAIverseEngine():
         self.logger = logging.getLogger("rAIverseEngine")
         self.logger.setLevel(logging.DEBUG)
         self.path_to_functions_file = json_path
+        self.skip_failed_functions = True   #TODO make this a parameter
+        self.retries = 5                    #TODO make this a parameter
         logging.basicConfig()
 
     def load_functions(self):
@@ -68,6 +70,12 @@ class rAIverseEngine():
         self.load_functions()
         self.logger.info("Loaded functions")
 
+    def count_improved(self):
+        count = 0
+        for name, data in self.functions.items():
+            if data["improved"] == True:
+                count += 1
+        return count
 
 
     def run20819(self):
@@ -96,7 +104,7 @@ class rAIverseEngine():
 
     def run_recursive_rev(self):
         function_layer = 0
-        overall_processed_functions = 0
+        overall_processed_functions = self.count_improved()
         while not self.check_all_improved():
             self.logger.info(f"Getting layer {function_layer}")
             lfl = self.get_lowest_function_layer(self.functions)
@@ -106,7 +114,7 @@ class rAIverseEngine():
             for name in lfl:
                 try:
                     self.logger.info(f"Improving function {name} progress {lfl.index(name)}/{len(lfl)}")
-                    improved_code, renaming_dict = self.ai_module.prompt_with_renaming(self.functions[name]["code"])
+                    improved_code, renaming_dict = self.ai_module.prompt_with_renaming(self.functions[name]["code"],self.retries)
                     improved_code = self.undo_PTR_DAT_renaming(renaming_dict,improved_code)
                     self.functions[name]["code"] = improved_code
                     self.functions[name]["improved"] = True
@@ -114,6 +122,8 @@ class rAIverseEngine():
                     self.rename_for_all_functions(renaming_dict)
                 except Exception as e:
                     self.logger.error(f"Error in function {name}: {e}")
+                    if self.skip_failed_functions:
+                        self.functions[name]["improved"] = True
                 processed_functions += 1
                 if processed_functions % 10 == 0:
                     self.save_functions()

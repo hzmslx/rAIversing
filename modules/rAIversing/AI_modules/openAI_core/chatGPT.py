@@ -3,6 +3,8 @@ import json
 import revChatGPT.Official
 from rAIversing.pathing import *
 from rAIversing.AI_modules.ai_module_inteface import AiModuleInterface
+import logging
+
 
 PROMPT_TEXT = \
     """
@@ -19,6 +21,7 @@ class ChatGPTModule(AiModuleInterface):
         with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "api_key.txt")) as f:
             self.api_key = f.read()
         self.chat = revChatGPT.Official.Chatbot(self.api_key)
+        self.logger = logging.getLogger("ChatGPTModule")
 
     def prompt(self, prompt):  # type: (str) -> str
         """Prompts the model and returns the result"""
@@ -26,8 +29,10 @@ class ChatGPTModule(AiModuleInterface):
         try:
             answer = response["choices"][0]["text"]
         except Exception as e:
+            print("Error in response:")
             print(response)
             print(e)
+            print(":Error in response")
             answer = ""
         return answer
 
@@ -74,19 +79,16 @@ class ChatGPTModule(AiModuleInterface):
             response_string = response_string.replace('```', '')
         if '`' in response_string:
             response_string = response_string.replace('`', '"')
-        try:
-            response_dict = json.loads(response_string, strict=False)
-        except Exception as e:
-            print(e)
-            print(response_string)
 
+        response_dict = json.loads(response_string, strict=False)
         return response_dict, response_string
 
-    def prompt_with_renaming(self, input_code):  # type: (str) -> (str, dict)
+    def prompt_with_renaming(self, input_code,retries=5):  # type: (str,int) -> (str, dict)
         """Prompts the model and returns the result and a dict of renamed Names"""
         full_prompt = PROMPT_TEXT + input_code
         renaming_dict = {}
-        for i in range(10):
+        response_string = ""
+        for i in range(0,retries):
             try:
                 response_string = self.prompt(full_prompt)
                 with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
@@ -94,9 +96,18 @@ class ChatGPTModule(AiModuleInterface):
                 response_dict, response_string = self.process_response(response_string)
                 break
             except Exception as e:
-                print(e)
-                print(response_string)
+                if i >= retries-1:
+                    raise Exception(f"No valid response from model after {retries} retries")
+                if "Expecting value: line 1 column 1 (char 0)" in str(e) or "Unterminated string starting at:" in str(e):
+                    self.logger.warning(f"Got incomplete response from model, retrying {i+1}/{retries}")
+                    continue
+                if "max_tokens" in str(e):
+                    raise Exception("Function too long, skipping!")
+                else:
+                    print(e)
+                    print(response_string)
                 continue
+
 
         if len(response_dict) == 2:
             for key in response_dict:
