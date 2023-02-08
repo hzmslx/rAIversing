@@ -103,9 +103,8 @@ class ChatGPTModule(AiModuleInterface):
                     self.logger.warning(f"Got incomplete response from model, retrying {i+1}/{retries}")
                     continue
                 if "The server is overloaded or not ready yet." in str(e):
-                    self.logger.warning(f"Got server overload from model, retrying {i+1}/{retries}")
-                    time.sleep(3)
-                    continue
+                    self.logger.warning(f"Got server overload from model, aborting")
+                    exit(-1)
 
                 if "max_tokens" in str(e):
                     raise Exception("Function too long, skipping!")
