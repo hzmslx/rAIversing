@@ -4,6 +4,7 @@ import revChatGPT.Official
 from rAIversing.pathing import *
 from rAIversing.AI_modules.ai_module_inteface import AiModuleInterface
 import logging
+import time
 
 
 PROMPT_TEXT = \
@@ -101,6 +102,11 @@ class ChatGPTModule(AiModuleInterface):
                 if "Expecting value: line 1 column 1 (char 0)" in str(e) or "Unterminated string starting at:" in str(e):
                     self.logger.warning(f"Got incomplete response from model, retrying {i+1}/{retries}")
                     continue
+                if "The server is overloaded or not ready yet." in str(e):
+                    self.logger.warning(f"Got server overload from model, retrying {i+1}/{retries}")
+                    time.sleep(3)
+                    continue
+
                 if "max_tokens" in str(e):
                     raise Exception("Function too long, skipping!")
                 else:
