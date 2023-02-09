@@ -60,6 +60,7 @@ def main():
     for i in range(len(funcs)):
         func = funcs[i]
         function_metadata[func.getName()] = {}
+        function_metadata[func.getName()]["current_name"] = func.getName()
         function_metadata[func.getName()]["calling"] = []
         function_metadata[func.getName()]["called"] = []
         function_metadata[func.getName()]["code"] = fdapi.decompile(func)
@@ -86,7 +87,7 @@ def main():
         cCode+="\n////>>"+func.getEntryPoint().toString("0x")+">>"+func.getName()+">>////\n"
         cCode+=function_code
 
-    program_name = str(fpapi.getCurrentProgram()).split(" ")[0]
+    program_name = str(fpapi.getCurrentProgram()).split(" ")[0].replace(".","_")
     if not os.path.exists(os.path.join(PROJECTS_ROOT,program_name)):
         os.mkdir(os.path.join(PROJECTS_ROOT,program_name))
 

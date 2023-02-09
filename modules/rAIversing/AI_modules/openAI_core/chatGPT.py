@@ -55,6 +55,9 @@ class ChatGPTModule(AiModuleInterface):
     def any_dict_to_renaming_dict(self, any_dict):
         pass
 
+    def postprocess_code(self, code):
+        return code.replace('\\\\','\\')
+
 
     def process_response(self, response_string_orig):
         response_string = self.remove_plaintext_from_response(response_string_orig)
@@ -143,7 +146,7 @@ class ChatGPTModule(AiModuleInterface):
                     renaming_dict[old] = new
             elif type(response_dict[old_key]) == dict and response_dict[new_key] == response_dict[old_key]:
                 renaming_dict = response_dict[old_key]
-
+        improved_code = self.postprocess_code(improved_code)
         return improved_code, renaming_dict
 
     def testbench(self):
