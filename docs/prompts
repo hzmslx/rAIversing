@@ -10,3 +10,19 @@ first make the following code more readable without renaming variables starting 
 being the old names and the values the corresponding new names. display only the improved code as entry of a json file
 
 #######################
+
+
+Respond with a single JSON object containing the following keys and values:
+.....
+
+
+######################
+
+Respond with a single JSON object containing the following keys and values:
+new_code : the improved code after making the following code more readable without renaming variables starting with PTR, DAT or FUN.
+renaming_operations : dictionary of all renaming operations in json format with keys being the old variable, type or parameter names and the values the corresponding new names.
+Do not use single quotes,or any other plaintext outside of the JSON object.
+
+Code:
+
+######################
