@@ -1,18 +1,24 @@
 import json
 import logging
 import os
+import tiktoken
 
 from rAIversing.AI_modules.openAI_core import chatGPT
 from rAIversing.CExporter import ghidra_commander
 from rAIversing.pathing import PROJECTS_ROOT, BINARIES_ROOT, GHIDRA_SCRIPTS
-from rAIversing.utils import check_and_fix_bin_path
+from rAIversing.utils import check_and_fix_bin_path, undo_bad_renaming, extract_function_name, \
+    generate_function_name, calc_used_tokens
 
 
 class rAIverseEngine():
     def __init__(self, ai_module, json_path="", binary_path=""):
+        self.max_tokens = 1500
         self.ai_module = ai_module  # type: chatGPT.ChatGPTModule
         self.ghidra_commander = ghidra_commander.HeadlessAnalyzerWrapper()
         self.functions = {}
+        self.used_tokens = 0
+        self.current_fn_lookup = {}
+        self.original_fn_lookup = {}
         self.logger = logging.getLogger("rAIverseEngine")
         self.logger.setLevel(logging.DEBUG)
         self.path_to_binary = check_and_fix_bin_path(binary_path)
@@ -34,6 +40,12 @@ class rAIverseEngine():
             self.logger.error("No functions.json found")
             raise Exception(f"Path to functions.json not found: {self.path_to_functions_file}")
 
+        for name, data in self.functions.items():
+            current_name = data["current_name"] if "current_name" in data.keys() else name
+            self.functions[name]["current_name"] = current_name
+            self.current_fn_lookup[name] = current_name
+            self.original_fn_lookup[current_name] = name
+
     def save_functions(self):
         with open(self.path_to_functions_file, "w") as f:
             json.dump(self.functions, f, indent=4)
@@ -42,7 +54,7 @@ class rAIverseEngine():
         lflList = []
         for name, data in self.functions.items():
             if data["improved"] == False and not data["skipped"]:
-                if len(data["code"].split("FUN_")) == 2:
+                if len(data["code"].split("FUN_")) == 2 or "called" not in data.keys() or len(data["called"]) == 0:
                     lflList.append(name)
         return lflList
 
@@ -53,20 +65,26 @@ class rAIverseEngine():
                 self.functions[function_name]["current_name"] = new_name
                 code.replace(rename_dict[function_name], new_name)
 
-    def rename_for_all_functions(self, renaming_dict, function_name):
+    def rename_for_all_functions(self, renaming_dict):
         for name, data in self.functions.items():
             for old, new in renaming_dict.items():
                 if old == new:
                     continue
-                if "Var" in old or "param" or "local" in old or "PTR" in old or "DAT" in old or "undefined" in old:
+                if old == "" or new == "":
+                    self.logger.error(f"Empty string in renaming dict: >{old}< -> >{new}<")
+                    continue
+                try:
+                    val = hex(int(old, 16))
+                    continue
+                except:
+                    pass
+                if "[" in old or "(" in old or "{" in old:
+                    continue
+                if "Var" in old or "param" in old or "local" in old or "PTR" in old or "DAT" in old or "undefined" in old:
+                    continue
+                if "FUN_" in old and "_FUN_" in data["code"]:
                     continue
                 data["code"] = data["code"].replace(old, new)
-
-    def undo_PTR_DAT_renaming(self, renaming_dict, code):
-        for old, new in renaming_dict.items():
-            if "PTR" in old or "DAT" in old:
-                code = code.replace(new, old)
-        return code
 
     def check_all_improved(self):
         for name, data in self.functions.items():
@@ -115,26 +133,39 @@ class rAIverseEngine():
         while not self.check_all_improved():
             self.logger.info(f"Getting layer {function_layer}")
             lfl = self.get_lowest_function_layer(self.functions)
+            if len(lfl) == 0:
+                self.logger.warning(f"No functions found in layer {function_layer}")
+                break
             self.logger.info(
-                f"Starting layer {function_layer} with {len(lfl)} of {len(self.functions)} functions. Overall processed functions: {overall_processed_functions}/{len(self.functions)}")
+                f"Starting layer {function_layer} with {len(lfl)} of {len(self.functions)} functions. Overall processed functions: {overall_processed_functions}/{len(self.functions)} Used tokens: {self.used_tokens}")
             function_layer += 1
             processed_functions = 0
             for name in lfl:
+                current_cost = calc_used_tokens(self.functions[name]["code"])
+                if current_cost > self.max_tokens:
+                    self.logger.warning(f"Function {name} is too big {current_cost} Skipping")
+                    self.functions[name]["skipped"] = True
+                    continue
                 try:
-                    self.logger.info(f"Improving function {name} progress {lfl.index(name)}/{len(lfl)}")
-                    improved_code, renaming_dict = self.ai_module.prompt_with_renaming(self.functions[name]["code"],
-                                                                                       self.retries)
-                    improved_code = self.undo_PTR_DAT_renaming(renaming_dict, improved_code)
+
+                    self.logger.info(f"Improving function {name} progress {lfl.index(name)}/{len(lfl)} for {current_cost} Tokens | Used tokens: {self.used_tokens}")
+                    self.used_tokens+= current_cost
+                    to_be_improved_code = self.functions[name]["code"]
+                    improved_code, renaming_dict = self.ai_module.prompt_with_renaming(to_be_improved_code,self.retries)
+                    improved_code = undo_bad_renaming(renaming_dict, improved_code)
                     self.functions[name]["code"] = improved_code
-                    self.functions[name]["improved"] = True
+                    new_name = generate_function_name(improved_code, name)
+                    self.functions[name]["current_name"] = new_name
+                    renaming_dict[name] = new_name
                     self.functions[name]["renaming"] = renaming_dict
-                    self.rename_for_all_functions(renaming_dict, name)
+                    self.rename_for_all_functions(renaming_dict)
+                    self.functions[name]["improved"] = True
                 except Exception as e:
                     self.logger.error(f"Error in function {name}: {e}")
                     if self.skip_failed_functions:
                         self.functions[name]["skipped"] = True
                 processed_functions += 1
-                if processed_functions % 10 == 0:
+                if processed_functions % 5 == 0:
                     self.save_functions()
                     self.logger.info(f"Saved functions after {processed_functions}/{len(lfl)} functions")
             overall_processed_functions += processed_functions
@@ -145,8 +176,36 @@ class rAIverseEngine():
         with open(output_file, 'w') as f:
             for name, data in self.functions.items():
                 if data["improved"] or all_functions:
-                    f.write(f'// {name} {data["entrypoint"]}\n')
+                    f.write(f'\n// {name} {data["entrypoint"]}\n')
                     f.write(data["code"].replace("\\\\", "\\"))
 
+    def get_current_name(self, function_name):
+        return self.current_fn_lookup[function_name]
+
+    def get_original_name(self, current_name):
+        return self.original_fn_lookup[current_name]
+
+    def cleanup(self):
+        self.load_functions()
+        for name, data in self.functions.items():
+            data["code"] = data["code"].replace("\n\\n", "\n")
+
+            current_name = extract_function_name(data["code"])
+            if name == current_name:
+                continue
+            else:
+                address_postfix = data["entrypoint"].split("x")[1]
+                if not current_name.endswith(address_postfix):
+                    new_name = f"{current_name}_{address_postfix}"
+                    self.functions[name]["current_name"] = new_name
+                    self.functions[name]["code"] = data["code"].replace(current_name, new_name)
+                    self.current_fn_lookup[name] = new_name
+                    self.original_fn_lookup[new_name] = name
+                else:
+                    continue
+        self.rename_for_all_functions(self.current_fn_lookup)
+        self.save_functions()
+
     def testbench(self):
-        self.ai_module.testbench()
+        self.cleanup()
+        # self.ai_module.testbench()
