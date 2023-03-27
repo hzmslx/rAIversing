@@ -1,13 +1,15 @@
 import json
 import logging
+from rich.console import Console
 import os
 import tiktoken
 
 from rAIversing.AI_modules.openAI_core import chatGPT
 from rAIversing.CExporter import ghidra_commander
 from rAIversing.pathing import PROJECTS_ROOT, BINARIES_ROOT, GHIDRA_SCRIPTS
-from rAIversing.utils import check_and_fix_bin_path, undo_bad_renaming, extract_function_name, \
-    generate_function_name, calc_used_tokens
+from rAIversing.utils import check_and_fix_bin_path, extract_function_name, \
+    generate_function_name, calc_used_tokens, MaxTriesExceeded, check_and_fix_double_function_renaming, \
+    check_do_nothing, get_random_string
 
 
 class rAIverseEngine():
@@ -27,6 +29,7 @@ class rAIverseEngine():
         self.skip_failed_functions = True  # TODO make this a parameter
         self.retries = 5  # TODO make this a parameter
         logging.basicConfig()
+        self.console = Console(soft_wrap=True)
 
     def load_functions(self):
         if os.path.isfile(self.path_to_functions_file):
@@ -50,13 +53,20 @@ class rAIverseEngine():
         with open(self.path_to_functions_file, "w") as f:
             json.dump(self.functions, f, indent=4)
 
-    def get_lowest_function_layer(self, functions):
+    def get_lowest_function_layer(self):
         lflList = []
         for name, data in self.functions.items():
             if data["improved"] == False and not data["skipped"]:
                 if len(data["code"].split("FUN_")) == 2 or "called" not in data.keys() or len(data["called"]) == 0:
                     lflList.append(name)
         return lflList
+
+    def get_missing_functions(self):
+        missing = []
+        for name, data in self.functions.items():
+            if not data["improved"] and not data["skipped"]:
+                missing.append(name)
+        return missing
 
     def fix_function_name(self, code, rename_dict, function_name):
         if function_name not in code:
@@ -71,7 +81,7 @@ class rAIverseEngine():
                 if old == new:
                     continue
                 if old == "" or new == "":
-                    self.logger.error(f"Empty string in renaming dict: >{old}< -> >{new}<")
+                    #self.logger.error(f"Empty string in renaming dict: >{old}< -> >{new}<")
                     continue
                 try:
                     val = hex(int(old, 16))
@@ -82,9 +92,91 @@ class rAIverseEngine():
                     continue
                 if "Var" in old or "param" in old or "local" in old or "PTR" in old or "DAT" in old or "undefined" in old:
                     continue
-                if "FUN_" in old and "_FUN_" in data["code"]:
+
+                if "FUN_" in new:
+                    self.logger.warning(f"Skipping renaming of {old} to {new}")
+                    continue
+                if not "FUN_" in old:
                     continue
                 data["code"] = data["code"].replace(old, new)
+
+    def cleanup_missing_renaming(self):
+        self.load_functions()
+        for name in self.functions.keys():
+            self.functions[name]["code"] = self.undo_bad_renaming(self.functions[name]["renaming"], self.functions[name]["code"])
+            self.functions[name]["code"] = check_and_fix_double_function_renaming(self.functions[name]["code"], self.functions[name]["renaming"],name)
+            self.rename_for_all_functions(self.functions[name]["renaming"])
+        self.save_functions()
+
+
+    def undo_bad_renaming(self, renaming_dict, code,original_code):
+        """This function is used to undo bad renaming of functions that are not called by other hidden functions.
+        As there are no guarantees that the Ai module wont rename already renamed functions we check if the old name,
+        is known as a current name of a function. If it is we undo the renaming by the following steps:
+        1. we sort the renaming dict by the length of the new name
+            This way we can undo the renaming of the longest names first and avoid renaming of already renamed functions
+        2. We replace the new name with a random string that is not used in the code and therefore wont be overwritten
+        3. We replace the random string with the old name
+
+        If multiple functions are renamed to the same name we can rely on the fact that the sorting is stable,
+        and the entries with the same length will be sorted by the order they were added to the dict which is the order
+        in wich they occurred in the code(Just AI things).
+        """
+
+
+
+
+        current_names = self.current_fn_lookup.values()
+        new_names = list(renaming_dict.values())
+        old_names = list(renaming_dict.keys())
+        to_be_handled_duplicates = []
+        temporary_remapping = {}
+        for old, new in renaming_dict.items():
+            if "FUN_" in old:
+                name=old
+        renaming_dict_sorted=dict(sorted(renaming_dict.items(), key=lambda item: (-len(item[1]), item[1])))
+        #print("")
+        #print(renaming_dict_sorted)
+        #print("")
+        for old, new in renaming_dict_sorted.items():
+
+            if "FUN_" in old:
+                name=old
+            if "PTR" in old or "DAT" in old:
+                code = code.replace(new, old)
+            if check_do_nothing(code) and "FUN_" in old:
+                if "nothing" not in new.lower():
+                    code = code.replace(new, "do_nothing")
+                    print(f"Replaced {new} with do_nothing in {old}")
+            elif "FUN_" in old and ("reverse" in new and "engineer" in new.lower()):
+                print(f"not replacing reverse engineer in {old}")
+                print(code)
+            if old in current_names and "FUN_" not in old and old not in code:
+                #self.logger.warning(f"(Currently not)Reversing potential false renaming of {old} to {new} in {self.get_original_name(old)}")
+                #print(new)
+                rand_str = get_random_string(10)
+                temporary_remapping[rand_str] = old
+                if new_names.count(new) > 1:
+                    code = code.replace(new, rand_str,1)
+                    self.logger.warning(f"Multiple old names for {new} in {name}")
+                else:
+                    code = code.replace(new, rand_str)
+
+                    continue
+
+
+
+
+        for temp, intended in temporary_remapping.items():
+            code = code.replace(temp, intended)
+
+
+        return code
+
+
+
+
+
 
     def check_all_improved(self):
         for name, data in self.functions.items():
@@ -97,12 +189,15 @@ class rAIverseEngine():
         self.load_functions()
         self.logger.info("Loaded functions")
 
-    def count_improved(self):
+    def count_processed(self):
         count = 0
         for name, data in self.functions.items():
-            if data["improved"] == True:
+            if data["improved"] == True or data["skipped"] == True:
                 count += 1
         return count
+
+
+
 
     def run20819(self):
         if False:
@@ -129,45 +224,75 @@ class rAIverseEngine():
 
     def run_recursive_rev(self):
         function_layer = 0
-        overall_processed_functions = self.count_improved()
+        overall_processed_functions = self.count_processed()
+        skipped_remaining_functions = False
         while not self.check_all_improved():
-            self.logger.info(f"Getting layer {function_layer}")
-            lfl = self.get_lowest_function_layer(self.functions)
+            self.console.log(f"[bold yellow]Gathering functions for layer [/bold yellow]{function_layer}")
+            lfl = self.get_lowest_function_layer()
             if len(lfl) == 0:
                 self.logger.warning(f"No functions found in layer {function_layer}")
-                break
-            self.logger.info(
-                f"Starting layer {function_layer} with {len(lfl)} of {len(self.functions)} functions. Overall processed functions: {overall_processed_functions}/{len(self.functions)} Used tokens: {self.used_tokens}")
+
+                self.console.print(f"These functions remain {self.get_missing_functions()}")
+                if skipped_remaining_functions:
+                    self.console.log(f"Breaking as no options are left! (Maybe recursion?)")
+                    break
+                self.console.print(f"Skipping too big functions....")
+                for name in self.get_missing_functions():
+                    if calc_used_tokens(self.ai_module.assemble_prompt(self.functions[name]["code"])) > self.max_tokens:
+                        new_name = f"{name.replace('FUN_', 'SKIP_SIZE_')}"
+                        renaming_dict = {name: new_name}
+                        improved_code = self.functions[name]["code"].replace(name, new_name)
+                        self.functions[name]["skipped"] = True
+                        self.functions[name]["code"] = improved_code
+                        self.functions[name]["current_name"] = new_name
+                        self.functions[name]["renaming"] = renaming_dict
+                        self.rename_for_all_functions(renaming_dict)
+
+
+                skipped_remaining_functions = True
+                continue
+            self.console.print(f"Starting layer {function_layer} with {len(lfl)} of {len(self.functions)} functions. Overall processed functions: {overall_processed_functions}/{len(self.functions)} Used tokens: {self.used_tokens}")
             function_layer += 1
             processed_functions = 0
             for name in lfl:
-                current_cost = calc_used_tokens(self.functions[name]["code"])
+                current_cost = calc_used_tokens(self.ai_module.assemble_prompt(self.functions[name]["code"]))
                 if current_cost > self.max_tokens:
-                    self.logger.warning(f"Function {name} is too big {current_cost} Skipping")
+                    self.console.print(f"Function [blue]{name}[/blue] is too big [red]{current_cost}[/red] Skipping")
+                    new_name = f"{name.replace('FUN_', 'SKIP_SIZE_')}"
+                    renaming_dict = {name: new_name}
+                    improved_code = self.functions[name]["code"].replace(name, new_name)
                     self.functions[name]["skipped"] = True
-                    continue
-                try:
-
-                    self.logger.info(f"Improving function {name} progress {lfl.index(name)}/{len(lfl)} for {current_cost} Tokens | Used tokens: {self.used_tokens}")
-                    self.used_tokens+= current_cost
-                    to_be_improved_code = self.functions[name]["code"]
-                    improved_code, renaming_dict = self.ai_module.prompt_with_renaming(to_be_improved_code,self.retries)
-                    improved_code = undo_bad_renaming(renaming_dict, improved_code)
-                    self.functions[name]["code"] = improved_code
-                    new_name = generate_function_name(improved_code, name)
-                    self.functions[name]["current_name"] = new_name
-                    renaming_dict[name] = new_name
-                    self.functions[name]["renaming"] = renaming_dict
-                    self.rename_for_all_functions(renaming_dict)
-                    self.functions[name]["improved"] = True
-                except Exception as e:
-                    self.logger.error(f"Error in function {name}: {e}")
-                    if self.skip_failed_functions:
-                        self.functions[name]["skipped"] = True
+                else:
+                    try:
+                        self.console.print(f"{lfl.index(name)}/{len(lfl)} | Improving function [blue]{name}[/blue] for {current_cost} Tokens | Used tokens: {self.used_tokens}")
+                        self.used_tokens+= current_cost
+                        to_be_improved_code = self.functions[name]["code"]
+                        improved_code, renaming_dict = self.ai_module.prompt_with_renaming(to_be_improved_code,self.retries)
+                        improved_code = self.undo_bad_renaming(renaming_dict, improved_code,to_be_improved_code)
+                        improved_code = check_and_fix_double_function_renaming(improved_code,renaming_dict,name)
+                        improved_code,new_name = generate_function_name(improved_code, name)
+                        renaming_dict[name] = new_name
+                        self.functions[name]["improved"] = True
+                    except MaxTriesExceeded as e:
+                        self.console.print(f"[bold red]Max tries exceeded[/bold red] in function [red]{name}[/red]")
+                        if self.skip_failed_functions:
+                            new_name = f"{name.replace('FUN_', 'SKIP_TRIES_')}"
+                            renaming_dict = {name: new_name}
+                            improved_code = self.functions[name]["code"].replace(name, new_name)
+                            self.functions[name]["skipped"] = True
+                    except Exception as e:
+                        self.console.print(f"[bold red]Error[/bold red] in function [red]{name}[/red]: {e}")
+                        raise Exception(e)
+                self.functions[name]["code"] = improved_code
+                self.functions[name]["current_name"] = new_name
+                self.functions[name]["renaming"] = renaming_dict
+                self.rename_for_all_functions(renaming_dict)
                 processed_functions += 1
                 if processed_functions % 5 == 0:
                     self.save_functions()
-                    self.logger.info(f"Saved functions after {processed_functions}/{len(lfl)} functions")
+                    self.console.log(f"Saved functions after {processed_functions}/{len(lfl)} functions")
+            self.save_functions()
+            self.console.log(f"Saved functions after {processed_functions}/{len(lfl)} functions")
             overall_processed_functions += processed_functions
 
     def export_processed(self, all_functions=False, output_file=""):
@@ -177,13 +302,21 @@ class rAIverseEngine():
             for name, data in self.functions.items():
                 if data["improved"] or all_functions:
                     f.write(f'\n// {name} {data["entrypoint"]}\n')
-                    f.write(data["code"].replace("\\\\", "\\"))
+                    f.write(data["code"].replace("\\\\", "\\").replace("\\n", "\n"))
 
     def get_current_name(self, function_name):
         return self.current_fn_lookup[function_name]
 
     def get_original_name(self, current_name):
-        return self.original_fn_lookup[current_name]
+        try:
+            return self.original_fn_lookup[current_name]
+        except KeyError:
+            print(f"KeyError: {current_name} not found in Lookup")
+    def update_current_name(self, function_name, current_name):
+        old_current_name = self.current_fn_lookup[function_name]
+        self.current_fn_lookup[function_name] = current_name
+        self.original_fn_lookup[current_name] = function_name
+        del self.original_fn_lookup[old_current_name]
 
     def cleanup(self):
         self.load_functions()
@@ -207,5 +340,8 @@ class rAIverseEngine():
         self.save_functions()
 
     def testbench(self):
+        print(calc_used_tokens(self.ai_module.assemble_prompt("")))
+
+
         self.cleanup()
         # self.ai_module.testbench()
