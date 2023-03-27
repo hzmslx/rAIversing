@@ -11,12 +11,11 @@ def binary_to_c_code(binary_path, processor_id=""):
     project_name = os.path.basename(binary_path).replace(".", "_")
     ah = HeadlessAnalyzerWrapper()
     ah.import_file(import_path)
-    ah.project_location(f'{PROJECTS_ROOT}') \
+    ah.project_location(f'{os.path.join(PROJECTS_ROOT,project_name)}') \
         .project_name(project_name) \
         .postScript(f'ExtractCcode.py') \
         .scriptPath(f'{GHIDRA_SCRIPTS}') \
         .log(f'{PROJECTS_ROOT}/log') \
-        .deleteProject() \
         .scriptlog(f'{PROJECTS_ROOT}/scriptlog')
 
     if processor_id != "":
