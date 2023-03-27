@@ -31,3 +31,4 @@ Repository for basic modules regarding the decompilation and reverse engeneering
 
 TODO: stop saving if timeout or other "invalid" errors occur
 TODO: reprompt if new name is already in use ???
+TODO Can we use Partial output as part of the input for prompting a completion?
