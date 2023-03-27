@@ -23,10 +23,11 @@ from rAIversing.pathing import *
 
 class HeadlessAnalyzerWrapper:
 
-    def __init__(self,analyzeHeadlessBinary=GHIDRA_HEADLESS_BINARY):
+    def __init__(self, analyzeHeadlessBinary=GHIDRA_HEADLESS_BINARY):
         self.__analyzeHeadlessBinary__ = analyzeHeadlessBinary
         self.__command__ = ""
         self.__import_file__ = ""
+        self.__process__ = ""
         self.__project_location__ = ""
         self.__project_name__ = ""
         self.__folder_path__ = ""
@@ -44,8 +45,15 @@ class HeadlessAnalyzerWrapper:
         self.__analysisTimeoutPerFile__ = ""
         self.__max_cpu__ = ""
         self.__loader__ = ""
+        self.__noanalysis__ = ""
 
+    def noanalysis(self):
+        self.__noanalysis__ = f' -noanalysis'
+        return self
 
+    def process(self, file):
+        self.__process__ = f' -process {file}'
+        return self
 
     def import_file(self, file_path):
         self.__import_file__ = f' -import {file_path}'
@@ -120,8 +128,8 @@ class HeadlessAnalyzerWrapper:
         return self
 
     def __prepare_project_location__(self):
-        if not os.path.exists(os.path.join(self.__project_location__,self.__project_name__.strip())):
-            os.mkdir(os.path.join(self.__project_location__,self.__project_name__.strip()).strip())
+        if not os.path.exists(os.path.join(self.__project_location__, self.__project_name__.strip())):
+            os.mkdir(os.path.join(self.__project_location__, self.__project_name__.strip()).strip())
 
     def __build__(self):
         if self.__folder_path__ != "":
@@ -134,6 +142,7 @@ class HeadlessAnalyzerWrapper:
                            f"{self.__preScript__}" \
                            f"{self.__postScript__}" \
                            f"{self.__scriptPath__}" \
+                           f"{self.__process__}" \
                            f"{self.__propertiesPath__}" \
                            f"{self.__scriptlog__}" \
                            f"{self.__log__}" \
@@ -144,8 +153,8 @@ class HeadlessAnalyzerWrapper:
                            f"{self.__cspec__}" \
                            f"{self.__analysisTimeoutPerFile__}" \
                            f"{self.__max_cpu__}" \
+                           f"{self.__noanalysis__}" \
                            f"{self.__loader__}"
-
 
         return self
 
