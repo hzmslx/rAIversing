@@ -5,7 +5,8 @@ import os
 import tiktoken
 
 from rAIversing.AI_modules.openAI_core import chatGPT
-from rAIversing.CExporter import ghidra_commander
+from rAIversing.Ghidra_Custom_API import HeadlessAnalyzerWrapper
+
 from rAIversing.pathing import PROJECTS_ROOT, BINARIES_ROOT, GHIDRA_SCRIPTS
 from rAIversing.utils import check_and_fix_bin_path, extract_function_name, \
     generate_function_name, calc_used_tokens, MaxTriesExceeded, check_and_fix_double_function_renaming, \
@@ -16,7 +17,6 @@ class rAIverseEngine():
     def __init__(self, ai_module, json_path="", binary_path=""):
         self.max_tokens = 1500
         self.ai_module = ai_module  # type: chatGPT.ChatGPTModule
-        self.ghidra_commander = ghidra_commander.HeadlessAnalyzerWrapper()
         self.functions = {}
         self.used_tokens = 0
         self.current_fn_lookup = {}
@@ -124,8 +124,6 @@ class rAIverseEngine():
         """
 
 
-
-
         current_names = self.current_fn_lookup.values()
         new_names = list(renaming_dict.values())
         old_names = list(renaming_dict.keys())
@@ -164,18 +162,10 @@ class rAIverseEngine():
 
                     continue
 
-
-
-
         for temp, intended in temporary_remapping.items():
             code = code.replace(temp, intended)
 
-
         return code
-
-
-
-
 
 
     def check_all_improved(self):
@@ -184,10 +174,6 @@ class rAIverseEngine():
                 return False
         return True
 
-    def run_reversing_only(self):
-        self.logger.info("Starting rAIverseEngine")
-        self.load_functions()
-        self.logger.info("Loaded functions")
 
     def count_processed(self):
         count = 0
@@ -196,31 +182,6 @@ class rAIverseEngine():
                 count += 1
         return count
 
-
-
-
-    def run20819(self):
-        if False:
-            self.ghidra_commander.import_file(f'{BINARIES_ROOT}/20819_firmware')
-            self.ghidra_commander.project_location(f'{PROJECTS_ROOT}') \
-                .project_name('20819_firmware') \
-                .postScript(f'ExtractCcode.py') \
-                .scriptPath(f'{GHIDRA_SCRIPTS}') \
-                .deleteProject() \
-                .log(f'{PROJECTS_ROOT}/log') \
-                .processor("ARM:LE:32:Cortex") \
-                .scriptlog(f'{PROJECTS_ROOT}/scriptlog') \
-                .run()
-        self.logger.info("Ghidra finished")
-        self.logger.info("Loading functions")
-        self.path_to_functions_file = f'{PROJECTS_ROOT}/20819_firmware/20819_firmware.json'
-        self.load_functions()
-        self.logger.info("Starting recursive improvement")
-
-        self.run_recursive_rev()
-        with open(f'{PROJECTS_ROOT}/20819_firmware/20819_firmware_out.c', 'w') as f:
-            for name, data in self.functions.items():
-                f.write(data["code"])
 
     def run_recursive_rev(self):
         function_layer = 0
@@ -239,7 +200,7 @@ class rAIverseEngine():
                 self.console.print(f"Skipping too big functions....")
                 for name in self.get_missing_functions():
                     if calc_used_tokens(self.ai_module.assemble_prompt(self.functions[name]["code"])) > self.max_tokens:
-                        new_name = f"{name.replace('FUN_', 'SKIP_SIZE_')}"
+                        new_name = f"{name.replace('FUN_', 'SKIPPED_')}"
                         renaming_dict = {name: new_name}
                         improved_code = self.functions[name]["code"].replace(name, new_name)
                         self.functions[name]["skipped"] = True
@@ -258,7 +219,7 @@ class rAIverseEngine():
                 current_cost = calc_used_tokens(self.ai_module.assemble_prompt(self.functions[name]["code"]))
                 if current_cost > self.max_tokens:
                     self.console.print(f"Function [blue]{name}[/blue] is too big [red]{current_cost}[/red] Skipping")
-                    new_name = f"{name.replace('FUN_', 'SKIP_SIZE_')}"
+                    new_name = f"{name.replace('FUN_', 'SKIPPED_')}"
                     renaming_dict = {name: new_name}
                     improved_code = self.functions[name]["code"].replace(name, new_name)
                     self.functions[name]["skipped"] = True
@@ -276,7 +237,7 @@ class rAIverseEngine():
                     except MaxTriesExceeded as e:
                         self.console.print(f"[bold red]Max tries exceeded[/bold red] in function [red]{name}[/red]")
                         if self.skip_failed_functions:
-                            new_name = f"{name.replace('FUN_', 'SKIP_TRIES_')}"
+                            new_name = f"{name.replace('FUN_', 'SKIPPED_')}"
                             renaming_dict = {name: new_name}
                             improved_code = self.functions[name]["code"].replace(name, new_name)
                             self.functions[name]["skipped"] = True
