@@ -120,6 +120,8 @@ class ChatGPTModule(AiModuleInterface):
                 exit(-1)
         elif self.api_key is not None:
             answer = self.chat.ask(prompt)
+            self.chat.conversation["default"].pop(1)
+            self.chat.conversation["default"].pop(1)
 
         if answer is None or answer == "":
             raise NoResponseException("No Answer from Chat (empty string)")
@@ -258,7 +260,7 @@ class ChatGPTModule(AiModuleInterface):
                     print(response_string)
                     print("###### RESPONSE END ######")
                     raise Exception(e)
-
+        raise MaxTriesExceeded("Max tries exceeded")
 
     def testbench(self):
 

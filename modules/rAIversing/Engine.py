@@ -226,7 +226,7 @@ class rAIverseEngine():
                 else:
                     try:
                         self.console.print(f"{lfl.index(name)}/{len(lfl)} | Improving function [blue]{name}[/blue] for {current_cost} Tokens | Used tokens: {self.used_tokens}")
-                        self.used_tokens+= current_cost
+                        self.used_tokens+= 2*current_cost
                         to_be_improved_code = self.functions[name]["code"]
                         improved_code, renaming_dict = self.ai_module.prompt_with_renaming(to_be_improved_code,self.retries)
                         improved_code = self.undo_bad_renaming(renaming_dict, improved_code,to_be_improved_code)

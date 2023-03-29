@@ -61,7 +61,7 @@ def check_and_fix_double_function_renaming(code, renaming_dict, name):
 
 
 def calc_used_tokens(function):
-    enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
+    enc = tiktoken.encoding_for_model("gpt-3.5-turbo-0301")
     return len(enc.encode(function))
 
 def is_already_exported(project_location, binary_name):
