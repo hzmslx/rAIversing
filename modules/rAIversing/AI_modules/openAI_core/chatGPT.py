@@ -135,7 +135,7 @@ class ChatGPTModule(AiModuleInterface):
                 print("<<<<<<<<")
                 exit(-1)
         elif self.api_key is not None:
-            raise NotImplementedError("V3 not implemented yet")
+            answer = self.chat.ask(prompt)
 
         if answer is None or answer == "":
             raise NoResponseException("No Answer from Chat (empty string)")
