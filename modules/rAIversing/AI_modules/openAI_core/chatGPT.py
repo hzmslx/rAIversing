@@ -65,19 +65,20 @@ Do not use single quotes. No Explanation is needed.
     return pre + code + post
 
 
-def access_token():
+def access_token(path_to_access_token=os.path.join(AI_MODULES_ROOT, "openAI_core", "access_token.txt")):
     chat = ChatGPTModule()
-    chat.init_access_token()
+    chat.init_access_token(path_to_access_token)
     return chat
 
 
-def api_key():
+def api_key(path_to_api_key=os.path.join(AI_MODULES_ROOT, "openAI_core", "api_key.txt")):
     chat = ChatGPTModule()
-    chat.init_api()
+    chat.init_api(path_to_api_key)
     return chat
 
 
 def v2_api_key():
+    print("Using v2 API key is deprecated. Please use the v3 API key instead.")
     chat = ChatGPTModule()
     chat.init_v2()
     return chat
@@ -97,13 +98,13 @@ class ChatGPTModule(AiModuleInterface):
             self.v2_api_key = f.read()
         self.chat = revChatGPT.V2.Chatbot(self.v2_api_key)
 
-    def init_api(self):
-        with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "api_key.txt")) as f:
+    def init_api(self,path_to_api_key=None):
+        with open(path_to_api_key) as f:
             self.api_key = f.read()
         self.chat = revChatGPT.V3.Chatbot(api_key=self.api_key)
 
-    def init_access_token(self):
-        with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "access_token.txt")) as f:
+    def init_access_token(self, path_to_access_token=None):
+        with open(path_to_access_token) as f:
             self.access_token = f.read()
         self.chat = revChatGPT.V1.Chatbot(config={"access_token": self.access_token})
 
