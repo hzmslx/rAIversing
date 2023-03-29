@@ -30,7 +30,7 @@ fpapi = FlatProgramAPI(getState().getCurrentProgram())
 fdapi = FlatDecompilerAPI(fpapi)
 
 
-def main():
+def main(json_file_path=None):
     state = getState()
     project = state.getProject()
     locator = project.getProjectData().getProjectLocator()
@@ -38,7 +38,10 @@ def main():
     funcs = list(fm.getFunctions(True))  # True means 'forward'
 
     program_name = str(fpapi.getCurrentProgram()).split(" ")[0].replace(".", "_")
-    with open(os.path.join(PROJECTS_ROOT, program_name, program_name + ".json"), "r") as f:
+    if json_file_path is None:
+        json_file_path = os.path.join(PROJECTS_ROOT, program_name, program_name + ".json")
+
+    with open(json_file_path, "r") as f:
         functions_dict = json.load(f)
 
     current_lookup = {}
@@ -144,4 +147,7 @@ def get_function_symbols(func):
 
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) > 1:
+        main(sys.argv[1])
+    else:
+        main()

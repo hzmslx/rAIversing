@@ -42,7 +42,7 @@ def renameForAllFunctions(functions, renaming_dict):
 
 
 
-def main():
+def main(export_path=None):
     state = getState()
     project = state.getProject()
     locator = project.getProjectData().getProjectLocator()
@@ -89,13 +89,16 @@ def main():
         cCode+=function_code
 
     program_name = str(fpapi.getCurrentProgram()).split(" ")[0].replace(".","_")
-    if not os.path.exists(os.path.join(PROJECTS_ROOT,program_name)):
-        os.mkdir(os.path.join(PROJECTS_ROOT,program_name))
+    if export_path is None:
+        export_path = os.path.join(PROJECTS_ROOT,program_name)
 
-    with open(os.path.join(PROJECTS_ROOT,program_name,program_name+".c"), "w") as f:
+    if not os.path.exists(export_path):
+        os.mkdir(export_path)
+
+    with open(os.path.join(export_path,program_name+".c"), "w") as f:
         f.write(cCode)
         f.close()
-    with open(os.path.join(PROJECTS_ROOT,program_name,program_name+".json"), "w") as f:
+    with open(os.path.join(export_path,program_name+".json"), "w") as f:
         f.write(json.dumps(function_metadata))
         f.close()
 
@@ -105,4 +108,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) > 1:
+        main(sys.argv[1])
+    else:
+        main()
