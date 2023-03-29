@@ -1,2 +1,5 @@
-setuptools~=65.5.1
-revChatGPT
+setuptools==67.6.1
+revChatGPT==4.0.11
+
+tiktoken==0.3.3
+rich==13.3.3
