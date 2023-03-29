@@ -221,7 +221,9 @@ class ChatGPTModule(AiModuleInterface):
                     if improved_code == input_code:
                         raise Exception("No change")
                     return improved_code, renaming_dict
-
+                else:
+                    self.logger.warning(f"Got invalid code from model, retrying {i + 1}/{retries}")
+                    continue
 
             except NoResponseException as e:
                 raise e

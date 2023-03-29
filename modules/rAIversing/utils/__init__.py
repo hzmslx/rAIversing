@@ -32,6 +32,9 @@ def check_and_fix_project_path(project_path):
         else:
             raise NotADirectoryError(f"Project {project_path} not found in {PROJECTS_ROOT}")
 
+def check_and_create_project_path(project_path):
+    if not os.path.isdir(project_path):
+        os.mkdir(project_path)
 
 def extract_function_name(code):
     if "WARNING: Removing unreachable block (ram," in code:
@@ -144,3 +147,4 @@ def check_valid_code(code):
         return False
     else:
         return True
+

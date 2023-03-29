@@ -2,15 +2,17 @@ import os
 
 from rAIversing.Ghidra_Custom_API.HeadlessAnalyzer import HeadlessAnalyzerWrapper
 from rAIversing.pathing import PROJECTS_ROOT, GHIDRA_SCRIPTS, BINARIES_ROOT
-from rAIversing.utils import check_and_fix_bin_path
+from rAIversing.utils import check_and_fix_bin_path, check_and_create_project_path
 
 
 def binary_to_c_code(binary_path, processor_id="",custom_headless_binary=None):
     import_path = check_and_fix_bin_path(binary_path)
     project_name = os.path.basename(binary_path).replace(".", "_")
+    project_path = f'{os.path.join(PROJECTS_ROOT,project_name)}'
+    check_and_create_project_path(project_path)
     ah = HeadlessAnalyzerWrapper(custom_headless_binary)
     ah.import_file(import_path)
-    ah.project_location(f'{os.path.join(PROJECTS_ROOT,project_name)}') \
+    ah.project_location(project_path) \
         .project_name(project_name) \
         .postScript(f'ExtractCcode.py') \
         .scriptPath(f'{GHIDRA_SCRIPTS}') \

@@ -91,7 +91,8 @@ def run_on_new_binary(path, arch, ai_module=None,custom_headless_binary=None,max
     if ai_module is None:
         raise ValueError("No AI module was provided")
     import_path = check_and_fix_bin_path(path)
-    binary_to_c_code(import_path, arch, custom_headless_binary=custom_headless_binary)
+    if not is_already_exported(import_path, os.path.basename(import_path)):
+        binary_to_c_code(import_path, arch, custom_headless_binary=custom_headless_binary)
     raie = rAIverseEngine(ai_module, binary_path=import_path, max_tokens=max_tokens)
     raie.load_functions()
     raie.run_recursive_rev()
