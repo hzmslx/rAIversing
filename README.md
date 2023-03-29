@@ -5,9 +5,10 @@ Repository for basic modules regarding the decompilation and reverse engeneering
 
 
 ## Installation
->#### Repo
+>### Repo
 >>-clone the repo
->#### Ghidra
+>### Ghidra 
+>##### (or use the --ghidra_path flag to specify a custom path to the analyzeHeadless binary)
 >>-download the latest version of ghidra
 >> 
 >>-extract the `ghidra_xxx_PUBLIC` folder to `/rAIversing/modules/ghidra`
@@ -18,7 +19,7 @@ Repository for basic modules regarding the decompilation and reverse engeneering
 >> 
 >>>-set the GHIDRA_INSTALL_DIR var in `/rAIversing/modules/rAIversing/pathing/__init__.py` to `ghidra_xxx_PUBLIC`
 >>>>(replace `ghidra_10.2.2_PUBLIC` with `ghidra_xxx_PUBLIC`)
->#### OpenAI
+>### OpenAI
 >>> -create api_key file `modules/rAIversing/AI_modules/openAI_core/api_key.txt`
 >>>
 >>> -add your openAI api key to the file (sk-...)
