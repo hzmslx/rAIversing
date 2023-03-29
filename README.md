@@ -33,7 +33,7 @@ Repository for basic modules regarding the decompilation and reverse engeneering
 ## Usage
 >#### General
 >``` 
->usage: rAIversing [-h] [--testbench] [--evaluation] [-a API_KEY_PATH] [-t ACCESS_TOKEN_PATH] [-g GHIDRA_PATH] {ghidra,new,continue} ...
+>usage: rAIversing [-h] [--testbench] [--evaluation] [-a API_KEY_PATH] [-t ACCESS_TOKEN_PATH] [-g GHIDRA_PATH] [-m MAX_TOKEN] {ghidra,new,continue} ...
 >
 >Reverse engineering tool using AI
 >
@@ -51,6 +51,7 @@ Repository for basic modules regarding the decompilation and reverse engeneering
 >   -a, --api_key_path        Custom OpenAI API key path (preferred)
 >   -t, --access_token_path   Custom OpenAI access token path
 >   -g, --ghidra_path         /path/to/custom/ghidra/support/analyzeHeadless
+>   -m, --max_token           Maximum number of tokens before function is skipped (size of function)
 >```
 >#### Using an existing ghidra project
 >```

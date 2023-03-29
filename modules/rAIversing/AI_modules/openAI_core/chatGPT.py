@@ -1,7 +1,6 @@
 import json
 
 import revChatGPT.V1
-import revChatGPT.V2
 import revChatGPT.V3
 from rAIversing.pathing import *
 from rAIversing.AI_modules.ai_module_inteface import AiModuleInterface
@@ -89,14 +88,9 @@ class ChatGPTModule(AiModuleInterface):
         self.chat = None
         self.api_key = None
         self.access_token = None
-        self.v2_api_key = None
         self.logger = logging.getLogger("ChatGPTModule")
         self.console = Console()
 
-    def init_v2(self):
-        with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "v2_api_key.txt")) as f:
-            self.v2_api_key = f.read()
-        self.chat = revChatGPT.V2.Chatbot(self.v2_api_key)
 
     def init_api(self,path_to_api_key=None):
         with open(path_to_api_key) as f:
@@ -114,17 +108,7 @@ class ChatGPTModule(AiModuleInterface):
     def prompt(self, prompt):  # type: (str) -> str
         """Prompts the model and returns the result"""
 
-        if self.v2_api_key is not None:
-            async def async_prompt(prompt):
-                response = ""
-                async for line in self.chat.ask(prompt=prompt):
-                    response += line["choices"][0]["text"]
-                return response
-
-            answer = asyncio.run(async_prompt(prompt))
-
-
-        elif self.access_token is not None:
+        if self.access_token is not None:
             try:
                 response = self.chat.ask(prompt)
                 for data in response:
