@@ -60,7 +60,7 @@ def evaluation(ai_module=None):
     eval_p2im_firmwares(ai_module)
 
 
-def run_on_ghidra_project(path, project_name=None, binary_name=None, ai_module=None,custom_headless_binary=None,max_tokens=1500):
+def run_on_ghidra_project(path, project_name=None, binary_name=None, ai_module=None,custom_headless_binary=None,max_tokens=3000):
     if ai_module is None:
         raise ValueError("No AI module was provided")
     if not os.path.exists(path):
@@ -87,7 +87,7 @@ def run_on_ghidra_project(path, project_name=None, binary_name=None, ai_module=N
     import_changes_to_existing_project(import_path, binary_name, project_name, custom_headless_binary=custom_headless_binary)
 
 
-def run_on_new_binary(path, arch, ai_module=None,custom_headless_binary=None,max_tokens=1500):
+def run_on_new_binary(path, arch, ai_module=None,custom_headless_binary=None,max_tokens=3000):
     if ai_module is None:
         raise ValueError("No AI module was provided")
     import_path = check_and_fix_bin_path(path)
@@ -109,7 +109,7 @@ if __name__ == "__main__":
     parser.add_argument('-a','--api_key_path', help='OpenAI API key path (preferred)', default=None)
     parser.add_argument('-t','--access_token_path', help='OpenAI access token path', default=None)
     parser.add_argument('-g','--ghidra_path', help='/path/to/custom/ghidra/support/analyzeHeadless', default=None)
-    parser.add_argument('-m','--max_token', help='Max Tokens before Skipping Functions', default=1500,type=int)
+    parser.add_argument('-m','--max_token', help='Max Tokens before Skipping Functions', default=3000,type=int)
     subparsers = parser.add_subparsers(help='sub-command help', dest='command')
 
     ghidra_selection = subparsers.add_parser('ghidra', help='Run rAIversing on a ghidra project')

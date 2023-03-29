@@ -14,7 +14,7 @@ from rAIversing.utils import check_and_fix_bin_path, extract_function_name, \
 
 
 class rAIverseEngine():
-    def __init__(self, ai_module, json_path="", binary_path="",max_tokens=1500):
+    def __init__(self, ai_module, json_path="", binary_path="",max_tokens=3000):
         self.max_tokens = max_tokens
         self.ai_module = ai_module  # type: chatGPT.ChatGPTModule
         self.functions = {}
