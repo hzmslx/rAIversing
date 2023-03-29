@@ -216,7 +216,7 @@ class rAIverseEngine():
             function_layer += 1
             processed_functions = 0
             for name in lfl:
-                current_cost = calc_used_tokens(self.ai_module.assemble_prompt(self.functions[name]["code"]))
+                current_cost = 2*calc_used_tokens(self.ai_module.assemble_prompt(self.functions[name]["code"]))
                 if current_cost > self.max_tokens:
                     self.console.print(f"Function [blue]{name}[/blue] is too big [red]{current_cost}[/red] Skipping")
                     new_name = f"{name.replace('FUN_', 'SKIPPED_')}"
@@ -226,7 +226,7 @@ class rAIverseEngine():
                 else:
                     try:
                         self.console.print(f"{lfl.index(name)}/{len(lfl)} | Improving function [blue]{name}[/blue] for {current_cost} Tokens | Used tokens: {self.used_tokens}")
-                        self.used_tokens+= 2*current_cost
+                        self.used_tokens+= current_cost
                         to_be_improved_code = self.functions[name]["code"]
                         improved_code, renaming_dict = self.ai_module.prompt_with_renaming(to_be_improved_code,self.retries)
                         improved_code = self.undo_bad_renaming(renaming_dict, improved_code,to_be_improved_code)
