@@ -98,6 +98,8 @@ def main(json_file_path=None):
                         print("Renaming " + symname + " to " + new_name + "_ in function " + func_name)
 
                     except Exception as e:
+                        if "NoneType" in str(e):
+                            continue
                         print("Error while renaming " + symname + " in function " + func_name)
                         print(e)
                         pass
