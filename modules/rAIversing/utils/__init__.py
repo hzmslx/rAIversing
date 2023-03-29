@@ -23,6 +23,15 @@ def check_and_fix_bin_path(binary_path):
         else:
             raise FileNotFoundError(f"Binary {binary_path} not found in {BINARIES_ROOT}")
 
+def check_and_fix_project_path(project_path):
+    if os.path.abspath(project_path) == project_path:
+        return project_path
+    else:
+        if os.path.isdir(os.path.join(PROJECTS_ROOT, project_path)):
+            return os.path.join(PROJECTS_ROOT, project_path)
+        else:
+            raise NotADirectoryError(f"Project {project_path} not found in {PROJECTS_ROOT}")
+
 
 def extract_function_name(code):
     if "WARNING: Removing unreachable block (ram," in code:
@@ -52,7 +61,12 @@ def calc_used_tokens(function):
     enc = tiktoken.encoding_for_model("text-davinci-002")
     return len(enc.encode(function))
 
-
+def is_already_exported(project_location, binary_name):
+    if os.path.isfile(os.path.join(project_location, f"{binary_name}.json")):
+        return True
+    else:
+        print(f"File {os.path.join(project_location, f'{binary_name}.json')} not found")
+        return False
 
 
 def get_random_string(length):
