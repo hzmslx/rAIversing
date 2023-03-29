@@ -23,8 +23,8 @@ from rAIversing.pathing import *
 
 class HeadlessAnalyzerWrapper:
 
-    def __init__(self, analyzeHeadlessBinary=GHIDRA_HEADLESS_BINARY):
-        self.__analyzeHeadlessBinary__ = analyzeHeadlessBinary
+    def __init__(self, analyzeHeadlessBinary=None):
+        self.__analyzeHeadlessBinary__ = analyzeHeadlessBinary if analyzeHeadlessBinary is not None else GHIDRA_HEADLESS_BINARY
         self.__command__ = ""
         self.__import_file__ = ""
         self.__process__ = ""
