@@ -59,15 +59,16 @@ def main(export_path=None):
 
     for i in range(len(funcs)):
         func = funcs[i]
-        function_metadata[func.getName()] = {}
-        function_metadata[func.getName()]["current_name"] = func.getName()
-        function_metadata[func.getName()]["calling"] = []
-        function_metadata[func.getName()]["called"] = []
-        function_metadata[func.getName()]["code"] = fdapi.decompile(func)
-        function_metadata[func.getName()]["entrypoint"] = func.getEntryPoint().toString("0x")
-        function_metadata[func.getName()]["improved"] = False
-        function_metadata[func.getName()]["skipped"] = False
-        function_metadata[func.getName()]["renaming"] = {}
+        function_name = func.getName()
+        function_metadata[function_name] = {}
+        function_metadata[function_name]["current_name"] = func.getName()
+        function_metadata[function_name]["calling"] = []
+        function_metadata[function_name]["called"] = []
+        function_metadata[function_name]["code"] = fdapi.decompile(func)
+        function_metadata[function_name]["entrypoint"] = func.getEntryPoint().toString("0x")
+        function_metadata[function_name]["improved"] = "FUN_" not in function_name
+        function_metadata[function_name]["skipped"] = False
+        function_metadata[function_name]["renaming"] = {}
         function_code = fdapi.decompile(func)
 
         for calling in func.getCallingFunctions(getMonitor()):
