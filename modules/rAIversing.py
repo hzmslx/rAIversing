@@ -42,24 +42,28 @@ FUN_000816a6
 New Function Name:
 do_nothing"""
 
-
-    with open(os.path.join(MODULES_ROOT,"rAIversing/AI_modules/openAI_core/temp/temp_response.json"), "r") as f:
+    with open(os.path.join(MODULES_ROOT, "rAIversing/AI_modules/openAI_core/temp/temp_response.json"), "r") as f:
         string = f.read()
         response_dict = json.loads(string, strict=False)
     print(response_dict)
+
+
 def evaluation(ai_module=None):
     eval_p2im_firmwares(ai_module)
 
 
-def run_on_ghidra_project(path, project_name=None, binary_name=None, ai_module=None,custom_headless_binary=None,max_tokens=3000):
+def run_on_ghidra_project(path, project_name=None, binary_name=None, ai_module=None, custom_headless_binary=None,
+                          max_tokens=3000):
     if ai_module is None:
         raise ValueError("No AI module was provided")
-    if not os.path.exists(path):
-        if os.path.exists(f"{os.path.join(PROJECTS_ROOT, path)}"):
+    if not os.path.isdir(os.path.abspath(path)):
+        if os.path.isdir(f"{os.path.join(PROJECTS_ROOT, path)}"):
             path = f"{os.path.join(PROJECTS_ROOT, path)}"
         else:
             print(f"Path {path} does not exist")
             return
+    else:
+        path = os.path.abspath(path)
 
     if binary_name == None:
         if project_name == None:
@@ -70,25 +74,26 @@ def run_on_ghidra_project(path, project_name=None, binary_name=None, ai_module=N
         project_name = os.path.basename(path).split(".")[0]
     import_path = check_and_fix_project_path(path)
     if not is_already_exported(import_path, binary_name):
-        existing_project_to_c_code(import_path, binary_name, project_name, custom_headless_binary=custom_headless_binary)
+        existing_project_to_c_code(import_path, binary_name, project_name,
+                                   custom_headless_binary=custom_headless_binary)
     raie = rAIverseEngine(ai_module, json_path=f"{os.path.join(import_path, binary_name)}.json", max_tokens=max_tokens)
     raie.load_functions()
     raie.run_recursive_rev()
     raie.export_processed(all_functions=True)
-    import_changes_to_existing_project(import_path, binary_name, project_name, custom_headless_binary=custom_headless_binary)
+    import_changes_to_existing_project(import_path, binary_name, project_name,
+                                       custom_headless_binary=custom_headless_binary)
 
 
-def run_on_new_binary(path, arch, ai_module=None,custom_headless_binary=None,max_tokens=3000):
+def run_on_new_binary(path, arch, ai_module=None, custom_headless_binary=None, max_tokens=3000):
     if ai_module is None:
         raise ValueError("No AI module was provided")
     import_path = check_and_fix_bin_path(path)
-    if not is_already_exported(import_path, os.path.basename(import_path)):
-        binary_to_c_code(import_path, arch, custom_headless_binary=custom_headless_binary)
+    binary_to_c_code(import_path, arch, custom_headless_binary=custom_headless_binary)
     raie = rAIverseEngine(ai_module, binary_path=import_path, max_tokens=max_tokens)
     raie.load_functions()
     raie.run_recursive_rev()
     raie.export_processed(all_functions=True)
-    import_changes_to_ghidra_project(import_path,custom_headless_binary=custom_headless_binary)
+    import_changes_to_ghidra_project(import_path, custom_headless_binary=custom_headless_binary)
 
 
 if __name__ == "__main__":
@@ -97,10 +102,10 @@ if __name__ == "__main__":
         description='Reverse engineering tool using AI')
     parser.add_argument('--testbench', action='store_true', help='Run testbench')
     parser.add_argument('--evaluation', action='store_true', help='Run evaluation')
-    parser.add_argument('-a','--api_key_path', help='OpenAI API key path (preferred)', default=None)
-    parser.add_argument('-t','--access_token_path', help='OpenAI access token path', default=None)
-    parser.add_argument('-g','--ghidra_path', help='/path/to/custom/ghidra/support/analyzeHeadless', default=None)
-    parser.add_argument('-m','--max_token', help='Max Tokens before Skipping Functions', default=3000,type=int)
+    parser.add_argument('-a', '--api_key_path', help='OpenAI API key path (preferred)', default=None)
+    parser.add_argument('-t', '--access_token_path', help='OpenAI access token path', default=None)
+    parser.add_argument('-g', '--ghidra_path', help='/path/to/custom/ghidra/support/analyzeHeadless', default=None)
+    parser.add_argument('-m', '--max_token', help='Max Tokens before Skipping Functions', default=3000, type=int)
     subparsers = parser.add_subparsers(help='sub-command help', dest='command')
 
     ghidra_selection = subparsers.add_parser('ghidra', help='Run rAIversing on a ghidra project')
@@ -117,7 +122,7 @@ if __name__ == "__main__":
     new_selection.add_argument('-p', '--path',
                                help=f'Location of the binary file either absolute or relative to {BINARIES_ROOT}',
                                required=True)
-    new_selection.add_argument('-a', '--arch', help='Processor ID as defined in Ghidra (e.g. x86:LE:64:default)',
+    new_selection.add_argument('-a', '--arch', help='Processor ID as defined in Ghidra (e.g.: x86:LE:64:default)',
                                default="ARM:LE:32:Cortex")  # TODO: Check if required
 
     continue_selection.add_argument('-p', '--path',
@@ -139,15 +144,18 @@ if __name__ == "__main__":
         evaluation(ai_module)
     elif args.command == "ghidra":
         print(args)
-        run_on_ghidra_project(args.path, args.project_name, args.binary_name, ai_module=ai_module,custom_headless_binary=args.ghidra_path,max_tokens=args.max_token)
+        run_on_ghidra_project(args.path, args.project_name, args.binary_name, ai_module=ai_module,
+                              custom_headless_binary=args.ghidra_path, max_tokens=args.max_token)
 
     elif args.command == "new":
         print(args)
-        run_on_new_binary(args.path, args.arch, ai_module,custom_headless_binary=args.ghidra_path,max_tokens=args.max_token)
+        run_on_new_binary(args.path, args.arch, ai_module, custom_headless_binary=args.ghidra_path,
+                          max_tokens=args.max_token)
 
     elif args.command == "continue":
         print(args)
-        run_on_ghidra_project(args.path, ai_module=ai_module,custom_headless_binary=args.ghidra_path,max_tokens=args.max_token)
+        run_on_ghidra_project(args.path, ai_module=ai_module, custom_headless_binary=args.ghidra_path,
+                              max_tokens=args.max_token)
     else:
         parser.print_help()
         exit(0)

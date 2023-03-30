@@ -1,7 +1,8 @@
 import json
-from rAIversing.pathing import *
 import random
 import string
+
+from rAIversing.pathing import *
 
 
 class MaxTriesExceeded(Exception):
@@ -13,8 +14,8 @@ class NoResponseException(Exception):
 
 
 def check_and_fix_bin_path(binary_path):
-    if os.path.abspath(binary_path) == binary_path:
-        return binary_path
+    if os.path.isfile(os.path.abspath(binary_path)):
+        return os.path.abspath(binary_path)
     else:
         if os.path.isfile(os.path.join(BINARIES_ROOT, binary_path)):
             return os.path.join(BINARIES_ROOT, binary_path)
@@ -22,8 +23,8 @@ def check_and_fix_bin_path(binary_path):
             raise FileNotFoundError(f"Binary {binary_path} not found in {BINARIES_ROOT}")
 
 def check_and_fix_project_path(project_path):
-    if os.path.abspath(project_path) == project_path:
-        return project_path
+    if os.path.isdir(os.path.abspath(project_path)):
+        return os.path.abspath(project_path)
     else:
         if os.path.isdir(os.path.join(PROJECTS_ROOT, project_path)):
             return os.path.join(PROJECTS_ROOT, project_path)
@@ -59,10 +60,10 @@ def check_and_fix_double_function_renaming(code, renaming_dict, name):
 
 
 def is_already_exported(project_location, binary_name):
-    if os.path.isfile(os.path.join(project_location, f"{binary_name}.json")):
+    if os.path.isfile(os.path.join(project_location, f"{binary_name.replace('.','_')}.json")):
         return True
     else:
-        print(f"File {os.path.join(project_location, f'{binary_name}.json')} not found")
+        print(f"""File {os.path.join(project_location, f'{binary_name.replace(".","_")}.json')} not found""")
         return False
 
 

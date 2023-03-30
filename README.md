@@ -1,7 +1,57 @@
 
 
-# rAIversing
-Repository for basic modules regarding the decompilation and reverse engeneering of Binaries using AI
+# **rAIversing**
+>## *Small but powerful reverse engineering tool using AI*
+>> This tool uses ghidra scripts to extract the decompiled C code from either an existing project or a new binary.  
+>> The extracted code is then used as input for an AI model to improve the code AKA reverse engineering.  
+>> Currently GPT3.5-turbo is used but other models can be used by implementing the `AiModuleInterface` interface and supplying it in the rAIversing.py file.  
+>> The Magic happens by starting with the lowest layers of functions (The ones that do not call sub-functions) and then working our way up.  
+>> This way whenever we send the model a function to improve it will already have the context of its sub-functions.    
+>> This we call Context-Propagation.  
+>> Context-Propagation is a key feature of this tool and is what makes it so powerful as it allows us to give the model the needed context without actually having to send it the whole program.  
+>> After all functions in a layer have been improved the next layer is processed and so on until all functions have been improved (or skipped due to their size).  
+>> As Our Prompt not only returns the improved Code but also a dictionary of renamings we use this to import the gained insights back into the ghidra project.   
+>> This includes function, variable and parameter names.  
+>
+> ## Examples
+> * **Use your own ghidra installation, a custom key file location and an already existing project:**  
+>   ``python3 rAIversing.py -a ~/api.txt -g ~/ghidra_10.2.2_PUBLIC/support/analyzeHeadless ghidra -p ~/ghidra_project_directory -b my_binary -n ghidra_project_name``
+> 
+> 
+> * **The previous example but the project directory, project and the binary have all the same name:**  
+>   ``python3 rAIversing.py -a ~/api.txt -g ~/ghidra_10.2.2_PUBLIC/support/analyzeHeadless ghidra -p ~/binary_i_found_in_the_parking_lot``  
+> 
+>  
+> * **Start a new project from a binary after you followed the installation guide (api_key and ghidra):**  
+>   ``python3 rAIversing.py new -p ~/binary_i_found_on_the_internet`` (being `ARM:LE:32:Cortex`)  
+> 
+> 
+> * **The previous example but with a [custom processor ID](https://static.grumpycoder.net/pixel/support/analyzeHeadlessREADME.html#processor):**  
+>   ``python3 rAIversing.py new -p ~/binary_i_found_in_the_mail -a x86:LE:64:default``
+> 
+>  
+> * **Start a binary in /testing/binaries/p2im after you run the setup.py and followed the installation guide:**    
+>   ``python3 rAIversing.py new -p p2im/Heat_Press``  (they are all ``ARM:LE:32:Cortex``)  
+> 
+> 
+> * **Continue a session started with the previous command:**  
+>   ``python3 rAIversing.py new -p p2im/Heat_Press``
+> 
+> 
+> * **Continue a session started with new but the binary was who knows where:**  
+>   ``python3 rAIversing.py continue -p binary_name ``
+>
+> 
+> ## !!! IMPORTANT !!!
+> * ``ARM:LE:32:Cortex`` is the default for now so if you want something else ,**specify it with the -a flag.**
+> * Pathing might be a bit of a mess.
+> * The option to use a custom output directory is not implemented yet.
+> * As the models behavior is not deterministic i might not have caught all the possible ways the response can be formatted.
+> * The models is not perfect and will sometimes make mistakes.(like claiming a function has something to do with a game when there is no game)
+ 
+
+
+
 
 
 ## Installation
