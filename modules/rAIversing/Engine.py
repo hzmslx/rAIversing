@@ -11,7 +11,7 @@ from rAIversing.utils import check_and_fix_bin_path, extract_function_name, \
     check_do_nothing, get_random_string
 
 
-class rAIverseEngine():
+class rAIverseEngine:
     def __init__(self, ai_module, json_path="", binary_path="",max_tokens=3000):
         self.max_tokens = max_tokens
         self.ai_module = ai_module  # type: chatGPT.ChatGPTModule
@@ -159,7 +159,7 @@ class rAIverseEngine():
 
     def check_all_improved(self):
         for name, data in self.functions.items():
-            if data["improved"] == False:
+            if not data["improved"]:
                 return False
         return True
 

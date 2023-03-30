@@ -5,12 +5,10 @@
 # @menupath Tools.ExtractC
 # @toolbar
 import json
-import sys, os
+import sys
+
 from ghidra.app.decompiler.flatapi import FlatDecompilerAPI
 from ghidra.program.flatapi import FlatProgramAPI
-import ghidra.program.model.listing.VariableFilter as VF
-from ghidra.program.model.listing.VariableFilter import MemoryVariableFilter
-import ghidra.program.model.listing.Function
 
 from pathing import *
 
@@ -25,7 +23,7 @@ fdapi = FlatDecompilerAPI(fpapi)
 def getLowestFunctionLayer(functions):
     lflList = []
     for name, data in functions.items():
-        if data["improved"] == False:
+        if not data["improved"]:
             if len(data["code"].split("FUN_"))== 2:
                 lflList.append(name)
     return lflList

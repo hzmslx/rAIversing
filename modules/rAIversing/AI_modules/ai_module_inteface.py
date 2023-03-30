@@ -1,8 +1,7 @@
 
 
 class AiModuleInterface:
-    def __init__(self):
-        pass
+
 
     def prompt(self, prompt):  # type: (str) -> str
         """Prompts the model and returns the result"""
