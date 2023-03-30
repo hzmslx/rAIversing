@@ -1,9 +1,6 @@
-from rAIversing.pathing import *
-import os, sys
-
-from rAIversing.AI_modules.openAI_core import chatGPT
-from rAIversing.Ghidra_Custom_API import binary_to_c_code, import_changes_to_ghidra_project
 from rAIversing.Engine import rAIverseEngine
+from rAIversing.Ghidra_Custom_API import binary_to_c_code, import_changes_to_ghidra_project
+from rAIversing.pathing import *
 
 
 def eval_p2im_firmwares(ai_module):

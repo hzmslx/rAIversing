@@ -1,17 +1,17 @@
 import json
+import logging
+import time
 
 import revChatGPT.V1
 import revChatGPT.V3
 import tiktoken
 from revChatGPT.typings import *
-from rAIversing.pathing import *
+from rich.console import Console
+
 from rAIversing.AI_modules.ai_module_inteface import AiModuleInterface
+from rAIversing.pathing import *
 from rAIversing.utils import extract_function_name, NoResponseException, clear_extra_data, split_response, \
     check_valid_code, MaxTriesExceeded
-import logging
-from rich.console import Console
-import time
-import asyncio
 
 PROMPT_TEXT = \
     """
@@ -78,11 +78,6 @@ def api_key(path_to_api_key=os.path.join(AI_MODULES_ROOT, "openAI_core", "api_ke
     return chat
 
 
-def v2_api_key():
-    print("Using v2 API key is deprecated. Please use the v3 API key instead.")
-    chat = ChatGPTModule()
-    chat.init_v2()
-    return chat
 
 
 class ChatGPTModule(AiModuleInterface):

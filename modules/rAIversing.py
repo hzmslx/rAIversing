@@ -1,14 +1,14 @@
-import json
 import argparse
+import json
 
-from rAIversing.Engine import rAIverseEngine
 from rAIversing.AI_modules.openAI_core import chatGPT
+from rAIversing.Engine import rAIverseEngine
 from rAIversing.Ghidra_Custom_API import binary_to_c_code, import_changes_to_ghidra_project, existing_project_to_c_code, \
     import_changes_to_existing_project
 from rAIversing.evaluator import eval_p2im_firmwares
-from rAIversing.utils import check_do_nothing, clear_extra_data, check_and_fix_bin_path, check_and_fix_project_path, \
-    is_already_exported
 from rAIversing.pathing import *
+from rAIversing.utils import check_and_fix_bin_path, check_and_fix_project_path, \
+    is_already_exported
 
 
 def testbench(ai_module):
@@ -43,19 +43,10 @@ New Function Name:
 do_nothing"""
 
 
-    print("WORKED")
-    exit(0)
-
-    rep = clear_extra_data(string, "json.decoder.JSONDecodeError: Extra data: line 8 column 1 (char 177)")
-    try:
-        response_dict = json.loads(rep, strict=False)
-        print(response_dict)
-    except json.decoder.JSONDecodeError as e:
-        print(e)
-        print(rep)
-        print("ERROR")
-        return
-
+    with open(os.path.join(MODULES_ROOT,"rAIversing/AI_modules/openAI_core/temp/temp_response.json"), "r") as f:
+        string = f.read()
+        response_dict = json.loads(string, strict=False)
+    print(response_dict)
 def evaluation(ai_module=None):
     eval_p2im_firmwares(ai_module)
 

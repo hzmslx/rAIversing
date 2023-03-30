@@ -1,13 +1,11 @@
 import json
 import logging
-from rich.console import Console
 import os
-import tiktoken
+
+from rich.console import Console
 
 from rAIversing.AI_modules.openAI_core import chatGPT
-from rAIversing.Ghidra_Custom_API import HeadlessAnalyzerWrapper
-
-from rAIversing.pathing import PROJECTS_ROOT, BINARIES_ROOT, GHIDRA_SCRIPTS
+from rAIversing.pathing import PROJECTS_ROOT
 from rAIversing.utils import check_and_fix_bin_path, extract_function_name, \
     generate_function_name, MaxTriesExceeded, check_and_fix_double_function_renaming, \
     check_do_nothing, get_random_string
@@ -100,22 +98,14 @@ class rAIverseEngine():
                     continue
                 data["code"] = data["code"].replace(old, new)
 
-    def cleanup_missing_renaming(self):
-        self.load_functions()
-        for name in self.functions.keys():
-            self.functions[name]["code"] = self.undo_bad_renaming(self.functions[name]["renaming"], self.functions[name]["code"])
-            self.functions[name]["code"] = check_and_fix_double_function_renaming(self.functions[name]["code"], self.functions[name]["renaming"],name)
-            self.rename_for_all_functions(self.functions[name]["renaming"])
-        self.save_functions()
-
 
     def undo_bad_renaming(self, renaming_dict, code,original_code):
         """This function is used to undo bad renaming of functions that are not called by other hidden functions.
-        As there are no guarantees that the Ai module wont rename already renamed functions we check if the old name,
+        As there are no guarantees that the Ai module won't rename already renamed functions we check if the old name,
         is known as a current name of a function. If it is we undo the renaming by the following steps:
         1. we sort the renaming dict by the length of the new name
             This way we can undo the renaming of the longest names first and avoid renaming of already renamed functions
-        2. We replace the new name with a random string that is not used in the code and therefore wont be overwritten
+        2. We replace the new name with a random string that is not used in the code and therefore won't be overwritten
         3. We replace the random string with the old name
 
         If multiple functions are renamed to the same name we can rely on the fact that the sorting is stable,
