@@ -9,7 +9,7 @@ from rAIversing.Ghidra_Custom_API import HeadlessAnalyzerWrapper
 
 from rAIversing.pathing import PROJECTS_ROOT, BINARIES_ROOT, GHIDRA_SCRIPTS
 from rAIversing.utils import check_and_fix_bin_path, extract_function_name, \
-    generate_function_name, calc_used_tokens, MaxTriesExceeded, check_and_fix_double_function_renaming, \
+    generate_function_name, MaxTriesExceeded, check_and_fix_double_function_renaming, \
     check_do_nothing, get_random_string
 
 
@@ -159,7 +159,6 @@ class rAIverseEngine():
                     self.logger.warning(f"Multiple old names for {new} in {name}")
                 else:
                     code = code.replace(new, rand_str)
-
                     continue
 
         for temp, intended in temporary_remapping.items():
@@ -199,7 +198,7 @@ class rAIverseEngine():
                     break
                 self.console.print(f"Skipping too big functions....")
                 for name in self.get_missing_functions():
-                    if calc_used_tokens(self.ai_module.assemble_prompt(self.functions[name]["code"])) > self.max_tokens:
+                    if self.ai_module.calc_used_tokens(self.ai_module.assemble_prompt(self.functions[name]["code"])) > self.max_tokens:
                         new_name = f"{name.replace('FUN_', 'SKIPPED_')}"
                         renaming_dict = {name: new_name}
                         improved_code = self.functions[name]["code"].replace(name, new_name)
@@ -216,7 +215,7 @@ class rAIverseEngine():
             function_layer += 1
             processed_functions = 0
             for name in lfl:
-                current_cost = 2*calc_used_tokens(self.ai_module.assemble_prompt(self.functions[name]["code"]))
+                current_cost = 2*self.ai_module.calc_used_tokens(self.ai_module.assemble_prompt(self.functions[name]["code"]))
                 if current_cost > self.max_tokens:
                     self.console.print(f"Function [blue]{name}[/blue] is too big [red]{current_cost}[/red] Skipping")
                     new_name = f"{name.replace('FUN_', 'SKIPPED_')}"
@@ -301,7 +300,7 @@ class rAIverseEngine():
         self.save_functions()
 
     def testbench(self):
-        print(calc_used_tokens(self.ai_module.assemble_prompt("")))
+        print(self.ai_module.calc_used_tokens(self.ai_module.assemble_prompt("")))
 
 
         self.cleanup()

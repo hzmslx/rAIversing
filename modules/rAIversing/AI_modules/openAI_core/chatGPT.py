@@ -2,6 +2,8 @@ import json
 
 import revChatGPT.V1
 import revChatGPT.V3
+import tiktoken
+from revChatGPT.typings import *
 from rAIversing.pathing import *
 from rAIversing.AI_modules.ai_module_inteface import AiModuleInterface
 from rAIversing.utils import extract_function_name, NoResponseException, clear_extra_data, split_response, \
@@ -154,21 +156,47 @@ class ChatGPTModule(AiModuleInterface):
 
 
     def process_response(self, response_string_orig):
+        try:
+            response_dict = json.loads(response_string_orig, strict=False)
+            return response_dict,response_string_orig
+        except:
+            pass
+
+
         response_string = self.remove_plaintext_from_response(response_string_orig)
+        try:
+            response_dict = json.loads(response_string, strict=False)
+            return response_dict,response_string_orig
+        except:
+            pass
+
+
         response_string = self.format_string_correctly(response_string)
+        try:
+            response_dict = json.loads(response_string, strict=False)
+            return response_dict,response_string_orig
+        except:
+            pass
+
         response_string = self.remove_trailing_commas(response_string)
+        try:
+            response_dict = json.loads(response_string, strict=False)
+            return response_dict,response_string_orig
+        except:
+            pass
+
         if '```\n\n```' in response_string:
             response_string = response_string.replace('```\n\n```', '\n####\n')
             splits = response_string.split('####')
             temp_dict = {}
             try:
-                rename_dict = json.loads(splits[0])
+                rename_dict = json.loads(splits[0], strict=False)
                 temp_dict["code"] = splits[1]
             except Exception as e:
                 self.logger.error("Ended Up here AAA")
                 pass
             try:
-                rename_dict = json.loads(splits[1])
+                rename_dict = json.loads(splits[1], strict=False)
                 temp_dict["code"] = splits[0]
             except Exception as e:
                 self.logger.error("Ended Up here BBB")
@@ -204,7 +232,7 @@ class ChatGPTModule(AiModuleInterface):
         return response_dict, response_string_orig
 
     def prompt_with_renaming(self, input_code, retries=5):  # type: (str,int) -> (str, dict)
-        """Prompts the model and returns the result and a dict of renamed Names"""
+        """Prompts the model and returns the resulting code and a dict of renamed Names"""
         full_prompt = assemble_prompt_v2(input_code)
         renaming_dict = {}
         response_string = ""
@@ -216,6 +244,8 @@ class ChatGPTModule(AiModuleInterface):
                 #print(response_string)
                 with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
                     f.write(response_string)
+                with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "r") as f:
+                    response_string = f.read()
                 response_dict, response_string = self.process_response(response_string)
                 improved_code, renaming_dict = split_response(response_dict)
                 if check_valid_code(improved_code):
@@ -245,7 +275,13 @@ class ChatGPTModule(AiModuleInterface):
                     if len(response_string.split("\n"))<3:
                         self.logger.warning(f"Function was: {extract_function_name(input_code)}")
                     continue
-
+            except APIConnectionError as e:
+                if i >= retries - 1:
+                    raise MaxTriesExceeded("Max tries exceeded")
+                if "Too Many Requests" in str(e):
+                    self.logger.warning(f"Got too many requests from model, will sleep now retrying {i + 1}/{retries}")
+                    time.sleep(30)
+                    continue
             except Exception as e:
                 self.logger.warning(f"Type of error: {type(e)}")
                 if "The server is overloaded or not ready yet." in str(e):
@@ -268,3 +304,8 @@ class ChatGPTModule(AiModuleInterface):
             response = f.read()
         response_dict, response_string = self.process_response(response)
         return response_dict, response_string
+
+
+    def calc_used_tokens(self,function):
+        enc = tiktoken.encoding_for_model("gpt-3.5-turbo-0301")
+        return len(enc.encode(function))

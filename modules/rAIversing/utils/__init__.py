@@ -1,7 +1,5 @@
 import json
-import os, sys
 from rAIversing.pathing import *
-import tiktoken
 import random
 import string
 
@@ -59,10 +57,6 @@ def check_and_fix_double_function_renaming(code, renaming_dict, name):
             code = code.replace(present_name, renaming_dict[name])
     return code
 
-
-def calc_used_tokens(function):
-    enc = tiktoken.encoding_for_model("gpt-3.5-turbo-0301")
-    return len(enc.encode(function))
 
 def is_already_exported(project_location, binary_name):
     if os.path.isfile(os.path.join(project_location, f"{binary_name}.json")):
