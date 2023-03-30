@@ -80,21 +80,23 @@ def main(json_file_path=None):
             hf = get_high_function(func)
             symbols = get_function_symbols(func)
 
-            for symbol in symbols:
-                # print(symbol.getName())
-                symname = symbol.getName()
+            for high_symbol in symbols:
+                # print(high_symbol.getName())
+                symname = high_symbol.getName()
                 if symname in renaming_dict.keys():
                     new_name = renaming_dict[symname]
-                    if new_name == "" or new_name == symname:
+                    if new_name == "" or new_name == symname or " " in new_name or "," in new_name:
                         continue
-
+                    symbol = high_symbol.getSymbol()
+                    if symbol is None:
+                        continue
                     try:
-                        symbol.getSymbol().setName(new_name, IMPORTED)
+                        symbol.setName(new_name, IMPORTED)
                         print("Renaming " + symname + " to " + new_name + " in function " + func_name)
 
                     # If the name is already taken, we add an underscore to the end
                     except ghidra.util.exception.DuplicateNameException:
-                        symbol.getSymbol().setName(new_name + "_", IMPORTED)
+                        symbol.setName(new_name + "_", IMPORTED)
                         print("Renaming " + symname + " to " + new_name + "_ in function " + func_name)
 
                     except Exception as e:
@@ -120,7 +122,7 @@ def main(json_file_path=None):
                 if var_name in renaming_dict.keys():
                     # print(var.getName())
                     new_name = renaming_dict[var_name]
-                    if new_name == "" or new_name == var_name:
+                    if new_name == "" or new_name == var_name or " " in new_name or "," in new_name:
                         continue
 
                     print("Renaming " + var_name + " to " + new_name + " in function " + func_name)
