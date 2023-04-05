@@ -1,3 +1,10 @@
+## !!! IMPORTANT !!!
+* THIS IS A WORK IN PROGRESS AND IS NOT READY FOR PRODUCTION USE.
+* BACKUP YOUR GHIDRA PROJECT BEFORE USING THIS TOOL.
+* ``ARM:LE:32:Cortex`` is the default for now so if you want something else ,**specify it with the -a flag.**
+* Pathing might be a bit of a mess.
+* As the models behavior is not deterministic i might not have caught all the possible ways the response can be formatted.
+* The models is not perfect and will sometimes make mistakes.(like claiming a function has something to do with a game when there is no game)
 
 
 # **rAIversing**
@@ -50,14 +57,6 @@
 
  * **Do a Dry-Run to check how many tokens the model would use approximately:**  
    ``python3 rAIversing.py new -p ~/binary_i_found_in_the_mail -d``
- 
- ## !!! IMPORTANT !!!
- * ``ARM:LE:32:Cortex`` is the default for now so if you want something else ,**specify it with the -a flag.**
- * Pathing might be a bit of a mess.
- * The option to use a custom output directory is not implemented yet.
- * As the models behavior is not deterministic i might not have caught all the possible ways the response can be formatted.
- * The models is not perfect and will sometimes make mistakes.(like claiming a function has something to do with a game when there is no game)
- 
 
 
 
