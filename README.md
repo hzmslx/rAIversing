@@ -31,6 +31,10 @@
  * **The previous example but with a [custom processor ID](https://static.grumpycoder.net/pixel/support/analyzeHeadlessREADME.html#processor):**  
    ``python3 rAIversing.py new -p ~/binary_i_found_in_the_mail -a x86:LE:64:default``
  
+ 
+ * **The previous example but with a custom output directory:**  
+   ``python3 rAIversing.py new -p ~/binary_i_found_in_the_mail -a x86:LE:64:default -o ~/projects/binary_i_found_in_the_mail``
+
   
  * **Start a binary in /testing/binaries/p2im after you run the setup.py and followed the installation guide:**    
    ``python3 rAIversing.py new -p p2im/Heat_Press``  (they are all ``ARM:LE:32:Cortex``)  
@@ -38,11 +42,14 @@
  
  * **Continue a session started with the previous command:**  
    ``python3 rAIversing.py new -p p2im/Heat_Press``
- 
+
  
  * **Continue a session started with new but the binary was who knows where:**  
    ``python3 rAIversing.py continue -p binary_name ``
 
+
+ * **Do a Dry-Run to check how many tokens the model would use approximately:**  
+   ``python3 rAIversing.py new -p ~/binary_i_found_in_the_mail -d``
  
  ## !!! IMPORTANT !!!
  * ``ARM:LE:32:Cortex`` is the default for now so if you want something else ,**specify it with the -a flag.**
@@ -117,12 +124,14 @@
 >
 >#### Starting from a binary
 >``` 
->usage: rAIversing.py new [-h] -p PATH [-a ARCH]
+>usage: rAIversing.py new [-h] -p PATH [-a ARCH] [-d ] [-o OUTPUT_PATH]
 >
 >optional arguments:
 >   -h, --help            show this help message and exit
 >   -p PATH, --path PATH  Location of the binary file either absolute or relative to /home/user/REPOS/rAIversing/testing/samples/binaries
 >   -a ARCH, --arch ARCH  Processor ID as defined in Ghidra (e.g. x86:LE:64:default)
+>   -d, --dry             Dry run to calculate how many tokens will be used
+>   -o, --output_path     Output path for the project aka ~/projects/my_binary
 >```
 >
 >#### Continue a project

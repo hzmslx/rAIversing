@@ -16,13 +16,14 @@ def binary_to_c_code(binary_path, processor_id="",custom_headless_binary=None,pr
     ah.import_file(import_path)
     ah.project_location(project_path) \
         .project_name(project_name) \
-        .postScript(f'ExtractCcode.py {project_path}') \
+        .postScript(f'ExtractCcode.py "{project_path}"') \
         .scriptPath(f'{GHIDRA_SCRIPTS}') \
         .log(f'{PROJECTS_ROOT}/log') \
         .scriptlog(f'{PROJECTS_ROOT}/scriptlog')
 
     if processor_id != "":
         ah.processor(processor_id)
+    ah.print()
     ah.run()
 
 def existing_project_to_c_code(project_location, binary_name=None, project_name=None,custom_headless_binary=None):

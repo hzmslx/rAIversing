@@ -369,3 +369,12 @@ class rAIverseEngine:
 
         self.cleanup()
         # self.ai_module.testbench()
+
+    def dry_run(self):
+        number_of_tokens = 0
+        for name, data in self.functions.items():
+            tokens = self.ai_module.calc_used_tokens(self.ai_module.assemble_prompt(data["code"]))
+            if not tokens > self.max_tokens:
+                number_of_tokens += tokens
+        self.console.log(f"Number of tokens: {number_of_tokens} for {len(self.functions)} functions")
+

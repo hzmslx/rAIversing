@@ -53,7 +53,7 @@ def evaluation(ai_module=None):
 
 
 def run_on_ghidra_project(path, project_name=None, binary_name=None, ai_module=None, custom_headless_binary=None,
-                          max_tokens=3000):
+                          max_tokens=3000,dry_run=False):
     if ai_module is None:
         raise ValueError("No AI module was provided")
     if not os.path.isdir(os.path.abspath(path)):
@@ -78,22 +78,39 @@ def run_on_ghidra_project(path, project_name=None, binary_name=None, ai_module=N
                                    custom_headless_binary=custom_headless_binary)
     raie = rAIverseEngine(ai_module, json_path=f"{os.path.join(import_path, binary_name)}.json", max_tokens=max_tokens)
     raie.load_functions()
+    if dry_run:
+        raie.dry_run()
+        return
     raie.run_recursive_rev()
     raie.export_processed(all_functions=True)
     import_changes_to_existing_project(import_path, binary_name, project_name,
                                        custom_headless_binary=custom_headless_binary)
 
 
-def run_on_new_binary(path, arch, ai_module=None, custom_headless_binary=None, max_tokens=3000):
+def run_on_new_binary(binary_path, arch, ai_module=None, custom_headless_binary=None, max_tokens=3000, dry_run=False, output_path=""):
     if ai_module is None:
         raise ValueError("No AI module was provided")
-    import_path = check_and_fix_bin_path(path)
-    binary_to_c_code(import_path, arch, custom_headless_binary=custom_headless_binary)
-    raie = rAIverseEngine(ai_module, binary_path=import_path, max_tokens=max_tokens)
+    import_path = check_and_fix_bin_path(binary_path)
+    binary_to_c_code(import_path, arch, custom_headless_binary=custom_headless_binary,project_path=output_path)
+    if output_path != "":
+        binary_name = os.path.basename(binary_path).replace(".", "_")
+        json_path = f"{os.path.join(output_path, binary_name)}.json"
+        project_name = binary_name
+        project_location = os.path.join(output_path, project_name)
+    else:
+        json_path=""
+    raie = rAIverseEngine(ai_module,json_path=json_path ,binary_path=import_path, max_tokens=max_tokens)
     raie.load_functions()
+    if dry_run:
+        raie.dry_run()
+        return
     raie.run_recursive_rev()
     raie.export_processed(all_functions=True)
-    import_changes_to_ghidra_project(import_path, custom_headless_binary=custom_headless_binary)
+    if output_path != "":
+        import_changes_to_existing_project(project_location, binary_name, project_name,
+                                           custom_headless_binary=custom_headless_binary)
+    else:
+        import_changes_to_ghidra_project(import_path, custom_headless_binary=custom_headless_binary)
 
 
 if __name__ == "__main__":
@@ -124,6 +141,8 @@ if __name__ == "__main__":
                                required=True)
     new_selection.add_argument('-a', '--arch', help='Processor ID as defined in Ghidra (e.g.: x86:LE:64:default)',
                                default="ARM:LE:32:Cortex")  # TODO: Check if required
+    new_selection.add_argument('-d', '--dry', help='Dry run to calculate how many tokens will be used', action='store_true')
+    new_selection.add_argument('-o', '--output_path', help='Output path for the project aka ~/projects/my_binary', default="")
 
     continue_selection.add_argument('-p', '--path',
                                     help=f'/path/to/directory/containing/project.rep/ can be either absolute or relative to {PROJECTS_ROOT}',
@@ -150,7 +169,7 @@ if __name__ == "__main__":
     elif args.command == "new":
         print(args)
         run_on_new_binary(args.path, args.arch, ai_module, custom_headless_binary=args.ghidra_path,
-                          max_tokens=args.max_token)
+                          max_tokens=args.max_token, dry_run=args.dry, output_path=args.output_path)
 
     elif args.command == "continue":
         print(args)
