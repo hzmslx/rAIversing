@@ -55,7 +55,7 @@ def main(json_file_path=None):
     for func in funcs:
 
         # Getting original function name if it already has been in ghidra
-        func_name = func.getName()
+        func_name = str(func.getName())
         if func_name not in current_lookup.keys():
             if func_name in original_lookup.keys():
                 func_name = original_lookup[func_name]
@@ -67,10 +67,10 @@ def main(json_file_path=None):
             new_name = function_data["current_name"]
 
             # We can skip functions that are Skipped in the json
-            if function_data["skipped"]:
+
+            if function_data["skipped"] or "imported" in function_data.keys() and function_data["imported"]:
                 continue
 
-            print(func_name)
             func.setName(new_name, IMPORTED)
 
             # print("Symbols:")
@@ -92,19 +92,20 @@ def main(json_file_path=None):
                         continue
                     try:
                         symbol.setName(new_name, IMPORTED)
-                        print("Renaming " + symname + " to " + new_name + " in function " + func_name)
+
 
                     # If the name is already taken, we add an underscore to the end
                     except ghidra.util.exception.DuplicateNameException:
-                        symbol.setName(new_name + "_", IMPORTED)
-                        print("Renaming " + symname + " to " + new_name + "_ in function " + func_name)
+                        new_name = new_name + "_"
+                        symbol.setName(new_name, IMPORTED)
 
                     except Exception as e:
                         if "NoneType" in str(e):
                             continue
                         print("Error while renaming " + symname + " in function " + func_name)
                         print(e)
-                        pass
+                        continue
+                    print("Symbol Renaming " + symname + " to " + new_name + " in function " + func_name)
 
             # Committing changes to the database
             HighFunctionDBUtil.commitLocalNamesToDatabase(hf, IMPORTED)
@@ -116,7 +117,7 @@ def main(json_file_path=None):
             vars_params = []
             vars_params += func.getAllVariables()
             vars_params += func.getParameters()
-
+            vars_params = list(dict.fromkeys(vars_params))
             for var in vars_params:
                 var_name = var.getName()
                 if var_name in renaming_dict.keys():
@@ -124,14 +125,18 @@ def main(json_file_path=None):
                     new_name = renaming_dict[var_name]
                     if new_name == "" or new_name == var_name or " " in new_name or "," in new_name:
                         continue
-
-                    print("Renaming " + var_name + " to " + new_name + " in function " + func_name)
                     try:
                         var.setName(new_name, IMPORTED)
                     # If the name is already taken, we add an underscore to the end (again)
                     except ghidra.util.exception.DuplicateNameException:
-                        var.setName(new_name + "_", IMPORTED)
+                        new_name = new_name + "_"
+                        var.setName(new_name, IMPORTED)
 
+                    print(str(type(var)) + " Renaming " + var_name + " to " + new_name + " in function " + func_name)
+            functions_dict[func_name]["imported"] = True
+
+    with open(json_file_path, "w") as f:
+        f.write(json.dumps(functions_dict, indent=4))
 
 def get_high_function(func):
     options = DecompileOptions()
