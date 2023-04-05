@@ -303,4 +303,4 @@ class ChatGPTModule(AiModuleInterface):
 
     def calc_used_tokens(self,function):
         enc = tiktoken.encoding_for_model("gpt-3.5-turbo-0301")
-        return len(enc.encode(function))
+        return int(1.6*len(enc.encode(function)))

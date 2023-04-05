@@ -205,7 +205,7 @@ class rAIverseEngine:
             function_layer += 1
             processed_functions = 0
             for name in lfl:
-                current_cost = 2*self.ai_module.calc_used_tokens(self.ai_module.assemble_prompt(self.functions[name]["code"]))
+                current_cost = self.ai_module.calc_used_tokens(self.ai_module.assemble_prompt(self.functions[name]["code"]))
                 if current_cost > self.max_tokens:
                     self.console.print(f"Function [blue]{name}[/blue] is too big [red]{current_cost}[/red] Skipping")
                     new_name = f"{name.replace('FUN_', 'SKIPPED_')}"
