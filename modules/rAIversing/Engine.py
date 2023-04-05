@@ -1,6 +1,6 @@
 import json
 import logging
-import os
+import os,re
 
 from rich.console import Console
 
@@ -8,7 +8,7 @@ from rAIversing.AI_modules.openAI_core import chatGPT
 from rAIversing.pathing import PROJECTS_ROOT
 from rAIversing.utils import check_and_fix_bin_path, extract_function_name, \
     generate_function_name, MaxTriesExceeded, check_and_fix_double_function_renaming, \
-    check_do_nothing, get_random_string
+    check_do_nothing, get_random_string, ptr_escape
 
 
 class rAIverseEngine:
@@ -19,6 +19,8 @@ class rAIverseEngine:
         self.used_tokens = 0
         self.current_fn_lookup = {}
         self.original_fn_lookup = {}
+        self.locked_functions = []
+        self.to_be_redone = []
         self.logger = logging.getLogger("rAIverseEngine")
         self.logger.setLevel(logging.DEBUG)
         self.path_to_binary = check_and_fix_bin_path(binary_path)
@@ -51,13 +53,91 @@ class rAIverseEngine:
         with open(self.path_to_functions_file, "w") as f:
             json.dump(self.functions, f, indent=4)
 
+
     def get_lowest_function_layer(self):
         lflList = []
         for name, data in self.functions.items():
             if data["improved"] == False and not data["skipped"]:
-                if len(data["code"].split("FUN_")) == 2 or "called" not in data.keys() or len(data["called"]) == 0:
+                escaped_code = ptr_escape(data["code"])
+                if len(escaped_code.split("FUN_")) == 2 or "called" not in data.keys() or len(data["called"]) == 0:
                     lflList.append(name)
+        if len(lflList) == 0:
+            missing = self.get_missing_functions()
+            for name in missing:
+                data = self.functions[name]
+                escaped_code = ptr_escape(data["code"])
+                if len(escaped_code.split(name)) == len(escaped_code.split("FUN_")):
+                    lflList.append(name)
+
+        if len(lflList) == 0:
+            missing = self.get_missing_functions()
+            sorted_missing = self.get_sorted_missing()
+            if len(sorted_missing) > 1:
+                print(sorted_missing)
+                lock_candidate = sorted_missing.pop(0)
+                self.lock_function(lock_candidate)
+                lflList=self.get_lowest_function_layer()
+                if len(lflList) != 0:
+                    if lflList not in self.to_be_redone:
+                        self.to_be_redone.append(lflList)
+                        for name in lflList:
+                            self.functions[name]["code_backup"] = self.functions[name]["code"]
+                    print(lflList)
+                    print("Locked functions: ", self.locked_functions)
+        if len(lflList) == 0:
+            missing = self.get_missing_functions()
+            regex = r"FUN_\w+"
+            for name in missing:    #Probably just one entry
+                print(name)
+                pass
+
+
+
+
+
         return lflList
+
+    def get_sorted_missing(self):
+        """
+        Returns a list of missing functions sorted by the amount of missing functions calling them.
+        :return:
+        """
+        missing = self.get_missing_functions()
+        sorted_missing = sorted(missing, key=lambda k: len(list(set(self.functions[k]['called']).intersection(missing))), reverse=False)
+        sorted_missing = sorted(sorted_missing, key=lambda k: len(list(set(self.functions[k]['calling']).intersection(missing))), reverse=True)
+        return sorted_missing
+
+    def skip_function(self, name):
+        new_name = f"{name.replace('FUN_', 'FUNC_')}"
+        renaming_dict = {name: new_name}
+        improved_code = self.functions[name]["code"].replace(name, new_name)
+        self.functions[name]["skipped"] = True
+        self.functions[name]["code"] = improved_code
+        self.functions[name]["current_name"] = new_name
+        self.functions[name]["renaming"] = renaming_dict
+        self.rename_for_all_functions(renaming_dict)
+
+    def lock_function(self, name):
+        self.logger.info(f"Locking function {name}")
+        self.skip_function(name)
+        self.locked_functions.append(name)
+
+    def handle_unlocking(self):
+        if len(self.locked_functions) > 0:
+            for name in self.locked_functions:
+                self.unlock_function(name)
+            self.locked_functions = []
+
+    def unlock_function(self, name):
+        old_name = name.replace('FUN_', 'FUNC_')
+        renaming_dict = {old_name: name}
+        improved_code = self.functions[name]["code"].replace(old_name,name)
+        self.functions[name]["skipped"] = False
+        self.functions[name]["code"] = improved_code
+        self.functions[name]["current_name"] = name
+        self.functions[name]["renaming"] = renaming_dict
+        self.locked_functions.remove(name)
+        self.rename_for_all_functions(renaming_dict,overwrite=True)
 
     def get_missing_functions(self):
         missing = []
@@ -73,7 +153,7 @@ class rAIverseEngine:
                 self.functions[function_name]["current_name"] = new_name
                 code.replace(rename_dict[function_name], new_name)
 
-    def rename_for_all_functions(self, renaming_dict):
+    def rename_for_all_functions(self, renaming_dict,overwrite=False):
         for name, data in self.functions.items():
             for old, new in renaming_dict.items():
                 if old == new:
@@ -91,10 +171,10 @@ class rAIverseEngine:
                 if "Var" in old or "param" in old or "local" in old or "PTR" in old or "DAT" in old or "undefined" in old:
                     continue
 
-                if "FUN_" in new:
+                if "FUN_" in new and not overwrite:
                     self.logger.warning(f"Skipping renaming of {old} to {new}")
                     continue
-                if not "FUN_" in old:
+                if not "FUN_" in old and not overwrite:       #Currently just renaming functions but i already have the "hooks" for pointers
                     continue
                 data["code"] = data["code"].replace(old, new)
 
@@ -178,6 +258,7 @@ class rAIverseEngine:
         skipped_remaining_functions = False
         while not self.check_all_improved():
             self.console.log(f"[bold yellow]Gathering functions for layer [/bold yellow]{function_layer}")
+            self.handle_unlocking()
             lfl = self.get_lowest_function_layer()
             if len(lfl) == 0:
                 self.logger.warning(f"No functions found in layer {function_layer}")
@@ -189,14 +270,7 @@ class rAIverseEngine:
                 self.console.print(f"Skipping too big functions....")
                 for name in self.get_missing_functions():
                     if self.ai_module.calc_used_tokens(self.ai_module.assemble_prompt(self.functions[name]["code"])) > self.max_tokens:
-                        new_name = f"{name.replace('FUN_', 'SKIPPED_')}"
-                        renaming_dict = {name: new_name}
-                        improved_code = self.functions[name]["code"].replace(name, new_name)
-                        self.functions[name]["skipped"] = True
-                        self.functions[name]["code"] = improved_code
-                        self.functions[name]["current_name"] = new_name
-                        self.functions[name]["renaming"] = renaming_dict
-                        self.rename_for_all_functions(renaming_dict)
+                        self.skip_function(name)
 
 
                 skipped_remaining_functions = True
@@ -208,13 +282,13 @@ class rAIverseEngine:
                 current_cost = self.ai_module.calc_used_tokens(self.ai_module.assemble_prompt(self.functions[name]["code"]))
                 if current_cost > self.max_tokens:
                     self.console.print(f"Function [blue]{name}[/blue] is too big [red]{current_cost}[/red] Skipping")
-                    new_name = f"{name.replace('FUN_', 'SKIPPED_')}"
+                    new_name = f"{name.replace('FUN_', 'FUNC_')}"
                     renaming_dict = {name: new_name}
                     improved_code = self.functions[name]["code"].replace(name, new_name)
                     self.functions[name]["skipped"] = True
                 else:
                     try:
-                        self.console.print(f"{lfl.index(name)}/{len(lfl)} | Improving function [blue]{name}[/blue] for {current_cost} Tokens | Used tokens: {self.used_tokens}")
+                        self.console.print(f"{lfl.index(name)+1}/{len(lfl)} | Improving function [blue]{name}[/blue] for {current_cost} Tokens | Used tokens: {self.used_tokens}")
                         self.used_tokens+= current_cost
                         to_be_improved_code = self.functions[name]["code"]
                         improved_code, renaming_dict = self.ai_module.prompt_with_renaming(to_be_improved_code,self.retries)
@@ -226,7 +300,7 @@ class rAIverseEngine:
                     except MaxTriesExceeded as e:
                         self.console.print(f"[bold red]Max tries exceeded[/bold red] in function [red]{name}[/red]")
                         if self.skip_failed_functions:
-                            new_name = f"{name.replace('FUN_', 'SKIPPED_')}"
+                            new_name = f"{name.replace('FUN_', 'FUNC_')}"
                             renaming_dict = {name: new_name}
                             improved_code = self.functions[name]["code"].replace(name, new_name)
                             self.functions[name]["skipped"] = True

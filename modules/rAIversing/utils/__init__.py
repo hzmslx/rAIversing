@@ -12,6 +12,10 @@ class MaxTriesExceeded(Exception):
 class NoResponseException(Exception):
     """Raised when no response is received"""
 
+def ptr_escape(string):
+    rand_str=get_random_string(5)
+    return string.replace("PTR_FUN_", rand_str)
+
 
 def check_and_fix_bin_path(binary_path):
     if os.path.isfile(os.path.abspath(binary_path)):
