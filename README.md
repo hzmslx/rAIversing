@@ -71,11 +71,11 @@
  
 * extract the `ghidra_xxx_PUBLIC` folder to `/rAIversing/modules/ghidra`
 
-   * should look like this: `/rAIversing/modules/ghidra/ghidra_xxx_PUBLIC/`
+   * should look like this: `~/rAIversing/modules/ghidra/ghidra_xxx_PUBLIC/`
  
 * if it is not ghidra_10.2.2_PUBLIC
 
-  * set the GHIDRA_INSTALL_DIR var in `/rAIversing/modules/rAIversing/pathing/__init__.py` to `ghidra_xxx_PUBLIC` (replace `ghidra_10.2.2_PUBLIC` with `ghidra_xxx_PUBLIC`)
+  * set the GHIDRA_INSTALL_DIR var in `~/rAIversing/modules/rAIversing/pathing/__init__.py` to `ghidra_xxx_PUBLIC` (replace `ghidra_10.2.2_PUBLIC` with `ghidra_xxx_PUBLIC`)
 ### OpenAI
  * create api_key file `modules/rAIversing/AI_modules/openAI_core/api_key.txt`
 
@@ -127,7 +127,7 @@
 >
 >optional arguments:
 >   -h, --help            show this help message and exit
->   -p PATH, --path PATH  Location of the binary file either absolute or relative to /home/user/REPOS/rAIversing/testing/samples/binaries
+>   -p PATH, --path PATH  Location of the binary file either absolute or relative to ~/rAIversing/testing/samples/binaries
 >   -a ARCH, --arch ARCH  Processor ID as defined in Ghidra (e.g. x86:LE:64:default)
 >   -d, --dry             Dry run to calculate how many tokens will be used
 >   -o, --output_path     Output path for the project aka ~/projects/my_binary
@@ -139,8 +139,8 @@
 >
 >optional arguments:
 >   -h, --help            show this help message and exit
->   -p PATH, --path PATH  /path/to/directory/containing/project.rep/ can be either absolute or relative to /home/user/REPOS/rAIversing/projects
+>   -p PATH, --path PATH  /path/to/directory/containing/project.rep/ can be either absolute or relative to ~/rAIversing/projects
 
-TODO: stop saving if timeout or other "invalid" errors occur
-TODO: reprompt if new name is already in use ???
-TODO Can we use Partial output as part of the input for prompting a completion?
+TODO: stop saving if timeout or other "invalid" errors occur  
+TODO: reprompt if new name is already in use ???  
+TODO Can we use Partial output as part of the input for prompting a completion?  
