@@ -5,16 +5,12 @@
 # @menupath Tools.ImportChanges
 # @toolbar
 import json
-import sys, os
+import sys
 from ghidra.app.decompiler.flatapi import FlatDecompilerAPI
 from ghidra.program.flatapi import FlatProgramAPI
-import ghidra.program.model.listing.VariableFilter as VF
-from ghidra.program.model.listing.VariableFilter import MemoryVariableFilter, RegisterVariableFilter
 import ghidra.program.model.listing.Function
 from ghidra.util.task import ConsoleTaskMonitor
 from ghidra.app.decompiler import DecompileOptions, DecompInterface
-from ghidra.app.decompiler.component import DecompilerUtils
-from ghidra.program.model.address import AddressSpace
 from ghidra.program.model.pcode import HighFunctionDBUtil
 from pathing import *
 import ghidra.program.model.symbol.SourceType.IMPORTED as IMPORTED
@@ -156,7 +152,10 @@ def get_function_symbols(func):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        main(sys.argv[1])
+    args = list(getScriptArgs())
+    print(args)
+    if len(args) > 0:
+        print(args)
+        main(str(args[0]))
     else:
         main()

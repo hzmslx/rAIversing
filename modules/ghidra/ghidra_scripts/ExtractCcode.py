@@ -9,6 +9,7 @@ import sys
 
 from ghidra.app.decompiler.flatapi import FlatDecompilerAPI
 from ghidra.program.flatapi import FlatProgramAPI
+from ghidra.util.task import ConsoleTaskMonitor
 
 from pathing import *
 
@@ -108,7 +109,10 @@ def main(export_path=None):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        main(sys.argv[1])
+    args = list(getScriptArgs())
+    print(args)
+    if len(args) > 0:
+        print(args)
+        main(str(args[0]))
     else:
         main()
