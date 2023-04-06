@@ -36,6 +36,8 @@ def main(json_file_path=None):
     program_name = str(fpapi.getCurrentProgram()).split(" ")[0].replace(".", "_")
     if json_file_path is None:
         json_file_path = os.path.join(PROJECTS_ROOT, program_name, program_name + ".json")
+    else:
+        json_file_path = os.path.join(json_file_path, program_name + ".json")
 
     with open(json_file_path, "r") as f:
         functions_dict = json.load(f)
@@ -128,7 +130,8 @@ def main(json_file_path=None):
                         new_name = new_name + "_"
                         var.setName(new_name, IMPORTED)
 
-                    print(str(type(var)) + " Renaming " + var_name + " to " + new_name + " in function " + func_name)
+                    #print(str(type(var)) + " Renaming " + var_name + " to " + new_name + " in function " + func_name)
+                    print("Var Renaming " + var_name + " to " + new_name + " in function " + func_name)
             functions_dict[func_name]["imported"] = True
 
     with open(json_file_path, "w") as f:

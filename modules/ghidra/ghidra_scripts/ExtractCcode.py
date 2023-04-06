@@ -43,8 +43,6 @@ def main(export_path=None):
     locator = project.getProjectData().getProjectLocator()
     projectMgr = project.getProjectManager()
     activeProject = projectMgr.getActiveProject()
-    projectData = activeProject.getProjectData()
-    rootFolder = projectData.getRootFolder()
     fm = currentProgram.getFunctionManager()
     funcs = list(fm.getFunctions(True))  # True means 'forward'
 
