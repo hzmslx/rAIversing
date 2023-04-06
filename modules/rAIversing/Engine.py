@@ -23,7 +23,6 @@ class rAIverseEngine:
         self.to_be_redone = []
         self.logger = logging.getLogger("rAIverseEngine")
         self.logger.setLevel(logging.DEBUG)
-        self.path_to_binary = check_and_fix_bin_path(binary_path)
         self.binary_name = os.path.basename(binary_path).replace(".", "_")
         self.path_to_functions_file = json_path if json_path != "" else f"{PROJECTS_ROOT}/{self.binary_name}/{self.binary_name}.json"
         self.skip_failed_functions = True  # TODO make this a parameter
