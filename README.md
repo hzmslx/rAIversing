@@ -58,8 +58,16 @@
  * **Do a Dry-Run to check how many tokens the model would use approximately:**  
    ``python3 rAIversing.py new -p ~/binary_i_found_in_the_mail -d``
 
+# **Unsure if the tokens are worth it?**
+There are examples in [examples](/examples) of 3 binaries used for testing containing:
+* An archived ghidra project of the binary after rAIversing.
+* Json file containing the internal project storage of this tool.
+* Json file containing a comparison of the actual and the reversed function names.
+* C files containing the decompiled code of the binary before and after rAIversing.
 
+You can just use the archived ghidra project to see the results of rAIversing to get a feeling for how much it can improve the code.
 
+#### **Note:** if you have any idea on how to measure the quality of the code please let me know.
 
 
 ## Installation
