@@ -21,24 +21,20 @@ except:
 fpapi = FlatProgramAPI(getState().getCurrentProgram())
 fdapi = FlatDecompilerAPI(fpapi)
 
+
 def getLowestFunctionLayer(functions):
     lflList = []
     for name, data in functions.items():
         if not data["improved"]:
-            if len(data["code"].split("FUN_"))== 2:
+            if len(data["code"].split("FUN_")) == 2:
                 lflList.append(name)
     return lflList
+
 
 def renameForAllFunctions(functions, renaming_dict):
     for name, data in functions.items():
         for old, new in renaming_dict.items():
             data["code"] = data["code"].replace(old, new)
-
-
-
-
-
-
 
 
 def main(export_path=None):
@@ -50,7 +46,7 @@ def main(export_path=None):
     projectData = activeProject.getProjectData()
     rootFolder = projectData.getRootFolder()
     fm = currentProgram.getFunctionManager()
-    funcs =list(fm.getFunctions(True)) # True means 'forward'
+    funcs = list(fm.getFunctions(True))  # True means 'forward'
 
     function_metadata = {}
 
@@ -74,45 +70,31 @@ def main(export_path=None):
         for calling in func.getCallingFunctions(getMonitor()):
             function_metadata[func.getName()]["calling"].append(calling.getName())
 
-        #if len(function_code.split("FUN_")) > 2:
-        #    if len(func.getCalledFunctions(getMonitor())) == 0:
-
-
-
         for called in func.getCalledFunctions(getMonitor()):
             function_metadata[func.getName()]["called"].append(called.getName())
 
+        cCode += "\n////>>" + func.getEntryPoint().toString("0x") + ">>" + func.getName() + ">>////\n"
+        cCode += function_code
 
+    program_name = str(fpapi.getCurrentProgram()).split(" ")[0].replace(".", "_")
 
-
-
-        cCode+="\n////>>"+func.getEntryPoint().toString("0x")+">>"+func.getName()+">>////\n"
-        cCode+=function_code
-
-    program_name = str(fpapi.getCurrentProgram()).split(" ")[0].replace(".","_")
     if export_path is None:
-        export_path = os.path.join(PROJECTS_ROOT,program_name)
+        export_path = os.path.join(PROJECTS_ROOT, program_name)
 
     if not os.path.exists(export_path):
         os.mkdir(export_path)
 
-    with open(os.path.join(export_path,program_name+".c"), "w") as f:
+    with open(os.path.join(export_path, program_name + ".c"), "w") as f:
         f.write(cCode)
         f.close()
-    with open(os.path.join(export_path,program_name+".json"), "w") as f:
+    with open(os.path.join(export_path, program_name + ".json"), "w") as f:
         f.write(json.dumps(function_metadata))
         f.close()
 
 
-
-
-
-
 if __name__ == "__main__":
     args = list(getScriptArgs())
-    print(args)
     if len(args) > 0:
-        print(args)
         main(str(args[0]))
     else:
         main()

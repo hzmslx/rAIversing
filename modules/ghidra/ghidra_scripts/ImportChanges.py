@@ -134,6 +134,7 @@ def main(json_file_path=None):
     with open(json_file_path, "w") as f:
         f.write(json.dumps(functions_dict, indent=4))
 
+
 def get_high_function(func):
     options = DecompileOptions()
     monitor = ConsoleTaskMonitor()
@@ -153,9 +154,7 @@ def get_function_symbols(func):
 
 if __name__ == "__main__":
     args = list(getScriptArgs())
-    print(args)
     if len(args) > 0:
-        print(args)
         main(str(args[0]))
     else:
         main()
