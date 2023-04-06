@@ -8,7 +8,7 @@ import tiktoken
 from revChatGPT.typings import *
 from rich.console import Console
 
-from rAIversing.AI_modules.ai_module_inteface import AiModuleInterface
+from rAIversing.AI_modules import AiModuleInterface
 from rAIversing.pathing import *
 from rAIversing.utils import extract_function_name, NoResponseException, clear_extra_data, split_response, \
     check_valid_code, MaxTriesExceeded
@@ -303,4 +303,4 @@ class ChatGPTModule(AiModuleInterface):
 
     def calc_used_tokens(self,function):
         enc = tiktoken.encoding_for_model("gpt-3.5-turbo-0301")
-        return int(1.6*len(enc.encode(function)))
+        return int(1.65*len(enc.encode(function)))
