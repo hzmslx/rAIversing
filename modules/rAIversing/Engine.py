@@ -4,7 +4,7 @@ import os,re
 
 from rich.console import Console
 
-from rAIversing.AI_modules.openAI_core import chatGPT
+from rAIversing.AI_modules import AiModuleInterface
 from rAIversing.pathing import PROJECTS_ROOT
 from rAIversing.utils import check_and_fix_bin_path, extract_function_name, \
     generate_function_name, MaxTriesExceeded, check_and_fix_double_function_renaming, \
@@ -14,7 +14,7 @@ from rAIversing.utils import check_and_fix_bin_path, extract_function_name, \
 class rAIverseEngine:
     def __init__(self, ai_module, json_path="", binary_path="",max_tokens=3000):
         self.max_tokens = max_tokens
-        self.ai_module = ai_module  # type: chatGPT.ChatGPTModule
+        self.ai_module = ai_module  # type: AiModuleInterface
         self.functions = {}
         self.used_tokens = 0
         self.current_fn_lookup = {}
@@ -32,6 +32,7 @@ class rAIverseEngine:
         self.console = Console(soft_wrap=True)
 
     def load_functions(self):
+        self.logger.info(f"Loading functions from {self.path_to_functions_file}")
         if os.path.isfile(self.path_to_functions_file):
             with open(self.path_to_functions_file) as f:
                 self.functions = json.load(f)
